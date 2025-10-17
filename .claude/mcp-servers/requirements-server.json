@@ -1,0 +1,8 @@
+{
+  "requirements": {
+    "command": "npx",
+    "args": ["-y", "tsx", "src/index.ts"],
+    "cwd": "${workspaceFolder}",
+    "description": "要求管理MCPサーバー - 対話的な要求管理システム"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "name": "requirements-mcp-server",
+  "version": "0.1.0",
+  "description": "要求管理MCPサーバー - Claude Codeとの対話的な要求管理システム",
+  "type": "module",
+  "bin": {
+    "requirements-mcp-server": "./build/index.js"
+  },
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node build/index.js",
+    "test": "vitest",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "requirements",
+    "management",
+    "claude-code",
+    "agentic-os",
+    "autonomous"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.20.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "eslint": "^8.54.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
