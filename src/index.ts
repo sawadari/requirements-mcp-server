@@ -15,7 +15,9 @@ import {
 import { z } from 'zod';
 import { RequirementsStorage } from './storage.js';
 import { ImpactAnalyzer } from './analyzer.js';
+import { ViewExporter } from './views.js';
 import { Requirement, RequirementStatus, RequirementPriority, ChangeProposal } from './types.js';
+import { OperationLogger } from './operation-logger.js';
 
 // Zodスキーマの定義
 const AddRequirementSchema = z.object({
@@ -80,10 +82,25 @@ class RequirementsMCPServer {
   private server: Server;
   private storage: RequirementsStorage;
   private analyzer: ImpactAnalyzer;
+  private viewExporter: ViewExporter;
+  private logger: OperationLogger;
 
   constructor() {
     this.storage = new RequirementsStorage('./data');
     this.analyzer = new ImpactAnalyzer(this.storage);
+    this.viewExporter = new ViewExporter(this.storage);
+    this.logger = new OperationLogger('./data');
+
+    // ビュー自動更新コールバックを設定
+    this.storage.setViewUpdateCallback(async () => {
+      try {
+        console.error('Updating views automatically...');
+        await this.viewExporter.exportAllViews('./views');
+        console.error('Views updated successfully');
+      } catch (error) {
+        console.error('Failed to update views:', error);
+      }
+    });
 
     this.server = new Server(
       {
@@ -463,6 +480,7 @@ class RequirementsMCPServer {
 
   async start(): Promise<void> {
     await this.storage.initialize();
+    await this.logger.initialize();
 
     const transport = new StdioServerTransport();
     await this.server.connect(transport);

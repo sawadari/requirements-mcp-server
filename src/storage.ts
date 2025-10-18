@@ -11,9 +11,17 @@ export class RequirementsStorage {
   private requirements: Map<string, Requirement> = new Map();
   private proposals: Map<string, ChangeProposal> = new Map();
   private dataDir: string;
+  private viewUpdateCallback?: () => Promise<void>;
 
   constructor(dataDir: string = './data') {
     this.dataDir = dataDir;
+  }
+
+  /**
+   * ビュー自動更新のコールバックを設定
+   */
+  setViewUpdateCallback(callback: () => Promise<void>): void {
+    this.viewUpdateCallback = callback;
   }
 
   async initialize(): Promise<void> {
@@ -79,6 +87,16 @@ export class RequirementsStorage {
 
       await fs.writeFile(reqPath, JSON.stringify(requirements, null, 2));
       await fs.writeFile(propPath, JSON.stringify(proposals, null, 2));
+
+      // ビュー自動更新コールバックを呼び出し
+      if (this.viewUpdateCallback) {
+        try {
+          await this.viewUpdateCallback();
+        } catch (error) {
+          console.error('Failed to update views:', error);
+          // ビュー更新の失敗はデータ保存の失敗ではないので、エラーを throw しない
+        }
+      }
     } catch (error) {
       console.error('Failed to save data:', error);
       throw error;

@@ -9,6 +9,8 @@ export interface Requirement {
   status: RequirementStatus;
   priority: RequirementPriority;
   category: string;
+  type?: RequirementType; // 要求の種類（階層構造用）
+  parentId?: string; // 親要求のID（階層構造用）
   tags: string[];
   dependencies: string[]; // 依存する要求のID
   createdAt: Date;
@@ -31,6 +33,11 @@ export type RequirementPriority =
   | 'high'      // P1: 高
   | 'medium'    // P2: 中
   | 'low';      // P3: 低
+
+export type RequirementType =
+  | 'stakeholder'  // ステークホルダ要求
+  | 'system'       // システム要求
+  | 'functional';  // システム機能要求
 
 export interface ImpactAnalysis {
   requirementId: string;
