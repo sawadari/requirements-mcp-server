@@ -1,0 +1,70 @@
+{
+  "parentConsistency": {
+    "enabled": true,
+    "severity": "error",
+    "keywords": {
+      "stakeholder": ["を向上", "を削減", "を確保", "を実現", "が求める", "ために"],
+      "system": ["システムは", "システムが", "こと", "機能を提供", "を可能に"],
+      "functional": ["受け付ける", "割り当てる", "計算する", "処理する", "制御する", "管理する"]
+    }
+  },
+  "refinement": {
+    "enabled": true,
+    "severity": "error",
+    "hierarchy": {
+      "stakeholder": {
+        "subjectPattern": "^(作業員|オペレータ|管理者|利用者|ユーザー|経営層|製造部門|財務部門|安全管理|部門|会社)",
+        "requiredPhrases": [],
+        "forbiddenPhrases": ["システムは", "機能", "実装"]
+      },
+      "system": {
+        "subjectPattern": "システムは|システムが",
+        "requiredPhrases": ["こと"],
+        "verbPattern": "(提供|実現|可能|監視|管理|制御|検知|最適化|自動|行う).*すること"
+      },
+      "functional": {
+        "requiredPhrases": [],
+        "maxComplexity": 3
+      }
+    }
+  },
+  "childConsistency": {
+    "enabled": true,
+    "severity": "warning",
+    "minChildren": 1,
+    "maxChildren": 10
+  },
+  "decomposition": {
+    "enabled": true,
+    "severity": "warning",
+    "checkOverlap": true,
+    "checkCoverage": true,
+    "similarityThreshold": 0.8
+  },
+  "granularity": {
+    "enabled": true,
+    "severity": "info",
+    "descriptionLength": {
+      "stakeholder": { "min": 30, "max": 200 },
+      "system": { "min": 20, "max": 150 },
+      "functional": { "min": 15, "max": 100 }
+    },
+    "complexityScore": {
+      "maxSentences": 3,
+      "maxClauses": 5
+    }
+  },
+  "rationaleConsistency": {
+    "enabled": true,
+    "severity": "error",
+    "checkDescriptionAlignment": true,
+    "checkParentAlignment": true,
+    "checkKeywordPresence": true,
+    "minLength": 30,
+    "requiredElements": {
+      "stakeholder": ["課題", "効果", "理由"],
+      "system": ["実現", "必要", "ため"],
+      "functional": ["実現", "必要", "ため"]
+    }
+  }
+}
