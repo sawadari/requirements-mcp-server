@@ -11,10 +11,12 @@ import { marked } from 'marked';
 import { OperationLogger } from './operation-logger.js';
 import { RequirementsStorage } from './storage.js';
 import { TreeBuilder } from './tree-view.js';
+import { RequirementValidator } from './validator.js';
 
 const app = express();
 const PORT = 5002;
 const storage = new RequirementsStorage('./data');
+const validator = new RequirementValidator(storage);
 
 // CORS有効化
 app.use(cors());
@@ -36,8 +38,8 @@ const VIEWS = [
   { id: 'operation-logs', name: '操作履歴（デバッグ）', icon: '🔍' },
 ];
 
-// ツリービュー専用ページ
-app.get('/tree', (req, res) => {
+// メインページ（ツリービュー）
+app.get('/', (req, res) => {
   const html = `
 <!DOCTYPE html>
 <html lang="ja">
@@ -53,21 +55,15 @@ app.get('/tree', (req, res) => {
     }
 
     :root {
-      --primary: #3b82f6;
-      --primary-dark: #2563eb;
-      --secondary: #8b5cf6;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --bg: #0f172a;
-      --surface: #1e293b;
-      --surface-light: #334155;
-      --text: #f1f5f9;
-      --text-secondary: #cbd5e1;
-      --border: #475569;
-      --stakeholder-color: #3b82f6;
-      --system-color: #8b5cf6;
-      --functional-color: #10b981;
+      /* ChatGPT/Codex style - minimal colors */
+      --primary: #10a37f;
+      --bg: #ffffff;
+      --sidebar-bg: #f7f7f8;
+      --surface: #ffffff;
+      --text: #202123;
+      --text-secondary: #6e6e80;
+      --border: #e5e5e5;
+      --shadow: rgba(0, 0, 0, 0.05);
     }
 
     body {
@@ -77,16 +73,37 @@ app.get('/tree', (req, res) => {
       line-height: 1.6;
       height: 100vh;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      margin: 0;
+      padding: 0;
     }
 
     .container {
       display: flex;
-      height: 100vh;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* メインコンテンツエリア */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* 上段: ツリーと詳細 */
+    .top-row {
+      display: flex;
+      gap: 0;
+      flex: 1;
+      overflow: hidden;
     }
 
     /* 左側のツリーパネル */
     .tree-panel {
-      width: 400px;
+      width: 320px;
       background: var(--surface);
       border-right: 1px solid var(--border);
       display: flex;
@@ -94,35 +111,172 @@ app.get('/tree', (req, res) => {
       overflow: hidden;
     }
 
+    /* Search Panel - 詳細ビューの下に配置 */
+    .search-panel {
+      flex: 0 0 auto;
+      height: 400px;
+      min-height: 200px;
+      max-height: 800px;
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-radius: 12px;
+      margin-top: 24px;
+      position: relative;
+    }
+
+    .search-resizer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      cursor: ns-resize;
+      background: transparent;
+      z-index: 10;
+    }
+
+    .search-resizer:hover {
+      background: var(--primary);
+      opacity: 0.5;
+    }
+
+    .search-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .search-filters {
+      padding: 10px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .search-filters input,
+    .search-filters select {
+      padding: 4px 6px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .search-filters input {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .search-filters select {
+      min-width: 140px;
+    }
+
+    .search-filters button {
+      padding: 8px 20px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: opacity 0.2s;
+    }
+
+    .search-filters button:hover {
+      opacity: 0.9;
+    }
+
+    .search-results {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    .search-result-item {
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--bg);
+    }
+
+    .search-result-item:hover {
+      border-color: var(--primary);
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .search-result-header {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .search-result-id {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .search-result-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .search-result-category {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .search-result-description {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
     .panel-header {
-      padding: 20px;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      padding: 10px 12px;
+      background: var(--surface);
       border-bottom: 1px solid var(--border);
     }
 
     .panel-header h1 {
       font-size: 18px;
-      font-weight: 700;
-      color: white;
-      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
     }
 
     .panel-header p {
       font-size: 13px;
-      color: rgba(255, 255, 255, 0.8);
+      color: var(--text-secondary);
     }
 
     .tree-content {
       flex: 1;
       overflow-y: auto;
-      padding: 16px;
+      padding: 8px;
     }
 
     /* グループヘッダー */
     .tree-group-header {
       cursor: pointer;
-      padding: 14px 16px;
-      margin: 12px 0 8px 0;
+      padding: 7px 8px;
+      margin: 6px 0 4px 0;
       background: linear-gradient(90deg, var(--surface-light) 0%, var(--surface) 100%);
       border: 2px solid var(--border);
       border-radius: 8px;
@@ -186,13 +340,13 @@ app.get('/tree', (req, res) => {
     /* ツリーアイテム */
     .tree-item {
       cursor: pointer;
-      padding: 8px 12px;
-      margin: 3px 0;
+      padding: 4px 6px;
+      margin: 2px 0;
       border-radius: 5px;
       transition: all 0.15s ease;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 5px;
       position: relative;
       background: rgba(30, 41, 59, 0.3);
       border: 1px solid transparent;
@@ -281,23 +435,41 @@ app.get('/tree', (req, res) => {
       flex: 1;
       overflow-y: auto;
       padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .detail-column-left {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .detail-column-right {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: sticky;
+      top: 0;
     }
 
     .detail-section {
       background: var(--surface);
-      padding: 24px;
+      padding: 12px;
       border-radius: 12px;
-      margin-bottom: 24px;
+      margin-top: 0;
     }
 
     .detail-section h3 {
       font-size: 18px;
-      margin-bottom: 16px;
-      color: var(--primary);
+      margin-bottom: 8px;
+      margin-top: 0;
+      color: var(--text);
     }
 
     .detail-field {
-      margin-bottom: 16px;
+      margin-bottom: 8px;
     }
 
     .detail-field-label {
@@ -387,6 +559,63 @@ app.get('/tree', (req, res) => {
       font-size: 16px;
     }
 
+    .relation-link {
+      display: flex;
+      align-items: center;
+      padding: 10px 14px;
+      margin: 6px 0;
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      gap: 10px;
+    }
+
+    .relation-link:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+      transform: translateX(4px);
+    }
+
+    .relation-link-icon {
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .relation-link-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .relation-link-id {
+      font-size: 11px;
+      font-family: 'Courier New', monospace;
+      color: var(--text-secondary);
+      margin-bottom: 2px;
+    }
+
+    .relation-link-title {
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .relation-link-meta {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .relation-link-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
     /* スクロールバー */
     ::-webkit-scrollbar {
       width: 10px;
@@ -452,17 +681,221 @@ app.get('/tree', (req, res) => {
     .legend-color.functional {
       background: var(--functional-color);
     }
+
+    /* タブナビゲーション - ChatGPT風 */
+    .tab-navigation {
+      display: none; /* サイドバーナビゲーションに置き換え */
+    }
+
+    .tab-button {
+      display: none;
+    }
+
+    .tab-content {
+      display: none;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .tab-content.active {
+      display: flex;
+    }
+
+    /* チャットパネル */
+    .chat-panel {
+      min-width: 300px;
+      max-width: 800px;
+      width: 400px;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .chat-resizer {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      cursor: ew-resize;
+      background: transparent;
+      z-index: 10;
+    }
+
+    .chat-resizer:hover,
+    .chat-resizer.resizing {
+      background: var(--primary);
+    }
+
+    .chat-header {
+      padding: 20px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .chat-header h2 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .chat-message {
+      display: flex;
+      gap: 12px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .message-avatar.user {
+      background: var(--text-secondary);
+    }
+
+    .message-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .message-text {
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .message-time {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      margin-top: 4px;
+    }
+
+    .chat-input-container {
+      padding: 16px 24px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+    }
+
+    .chat-input-wrapper {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    .chat-input {
+      flex: 1;
+      min-height: 44px;
+      max-height: 120px;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .chat-input:focus {
+      border-color: var(--primary);
+    }
+
+    .chat-send-btn {
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 8px;
+      background: var(--primary);
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chat-send-btn:hover {
+      background: var(--primary-hover);
+    }
+
+    .chat-send-btn:disabled {
+      background: var(--border);
+      cursor: not-allowed;
+    }
+
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 12px 16px;
+    }
+
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-tertiary);
+      animation: typing 1.4s infinite;
+    }
+
+    .typing-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes typing {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-10px); }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- 左側: ツリーパネル -->
-    <div class="tree-panel">
-      <div class="panel-header">
-        <h1>🌳 要求ツリー</h1>
-        <p>階層構造で要求を表示</p>
-        <p id="version-display" style="font-size: 11px; opacity: 0.7; margin-top: 8px;"></p>
-      </div>
+    <div class="main-content">
+      <!-- 上段: ツリーと詳細 -->
+      <div class="top-row">
+        <!-- 左側: ツリーパネル -->
+        <div class="tree-panel" id="treePanel">
+        <div class="panel-header">
+          <h1>🌳 要求ツリー</h1>
+          <p>階層構造で要求を表示</p>
+          <p id="version-display" style="font-size: 11px; opacity: 0.7; margin-top: 8px;"></p>
+        </div>
       <div class="tree-content">
         <div class="legend">
           <div class="legend-title">凡例</div>
@@ -485,15 +918,102 @@ app.get('/tree', (req, res) => {
       </div>
     </div>
 
-    <!-- 右側: 詳細パネル -->
-    <div class="detail-panel">
-      <div class="detail-header" id="detailHeader">
-        <h2>要求を選択してください</h2>
+        <!-- 右側: 詳細パネル -->
+        <div class="detail-panel">
+          <div class="detail-header" id="detailHeader">
+            <h2>要求を選択してください</h2>
+          </div>
+          <div class="detail-body" id="detailBody" style="display: flex; align-items: center; justify-content: center;">
+            <div class="empty-state">
+              <div class="empty-state-icon">📋</div>
+              <div class="empty-state-text">左側のツリーから要求を選択すると、<br>詳細情報が表示されます</div>
+            </div>
+          </div>
+
+          <!-- Search Panel - 詳細ビューの下に配置 -->
+          <div class="search-panel" id="searchPanel">
+        <div class="search-resizer" id="searchResizer"></div>
+        <div class="panel-header">
+          <h1>🔍 Search & Filter</h1>
+          <p>要求を検索・フィルタリング</p>
+        </div>
+        <div class="search-content">
+          <div class="search-filters">
+            <input type="text" id="searchKeyword" placeholder="キーワード検索..." />
+            <select id="filterStatus">
+              <option value="">全てのステータス</option>
+              <option value="approved">承認済み</option>
+              <option value="draft">ドラフト</option>
+              <option value="review">レビュー中</option>
+            </select>
+            <select id="filterPriority">
+              <option value="">全ての優先度</option>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+            <select id="filterCategory">
+              <option value="">全てのカテゴリ</option>
+              <option value="stakeholder">ステークホルダ要求</option>
+              <option value="system">システム要求</option>
+              <option value="functional">システム機能要求</option>
+            </select>
+            <select id="filterAuthor">
+              <option value="">全ての作成者</option>
+            </select>
+            <input type="text" id="filterTags" placeholder="タグ (カンマ区切り)" style="min-width: 150px;" />
+            <select id="viewMode">
+              <option value="list">リスト</option>
+              <option value="matrix-stakeholder-system">マトリックス: ステークホルダ→システム</option>
+              <option value="matrix-system-functional">マトリックス: システム→機能</option>
+            </select>
+            <button id="searchBtn">検索</button>
+          </div>
+          <div id="searchResults" class="search-results">
+            <div class="empty-state">
+              <div class="empty-state-icon">🔍</div>
+              <div class="empty-state-text">検索条件を設定して「検索」ボタンを押してください</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="detail-body" id="detailBody">
-        <div class="empty-state">
-          <div class="empty-state-icon">📋</div>
-          <div class="empty-state-text">左側のツリーから要求を選択すると、<br>詳細情報が表示されます</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- チャットパネル -->
+    <div class="chat-panel" id="chatPanel">
+      <div class="chat-resizer" id="chatResizer"></div>
+      <div class="chat-header">
+        <h2>💬 Claude Assistant</h2>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-message">
+          <div class="message-avatar">C</div>
+          <div class="message-content">
+            <div class="message-text">こんにちは！要求管理のお手伝いをします。
+
+以下のような質問にお答えできます:
+• 新しい要求の追加
+• 要求の妥当性チェック
+• 依存関係の分析
+• 要求の検索・フィルタ
+
+何かお手伝いできることはありますか？</div>
+            <div class="message-time">今</div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-input-container">
+        <div class="chat-input-wrapper">
+          <textarea
+            id="chatInput"
+            class="chat-input"
+            placeholder="メッセージを入力..."
+            rows="1"
+          ></textarea>
+          <button id="chatSend" class="chat-send-btn">↑</button>
         </div>
       </div>
     </div>
@@ -501,9 +1021,224 @@ app.get('/tree', (req, res) => {
 
   <script>
     let selectedRequirement = null;
+    let allRequirements = []; // Store all requirements for search
 
     // バージョン表示を更新
     document.getElementById('version-display').textContent = 'v' + Date.now();
+
+    // View switching functionality
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const view = item.getAttribute('data-view');
+
+        // Update active state
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+
+        // Note: Searchパネルは常に表示されるようになったため、
+        // ビュー切り替えロジックは削除しました
+      });
+    });
+
+    // Search functionality
+    document.getElementById('searchBtn').addEventListener('click', async () => {
+      const keyword = document.getElementById('searchKeyword').value;
+      const status = document.getElementById('filterStatus').value;
+      const priority = document.getElementById('filterPriority').value;
+      const category = document.getElementById('filterCategory').value;
+      const author = document.getElementById('filterAuthor').value;
+      const tagsInput = document.getElementById('filterTags').value;
+      const viewMode = document.getElementById('viewMode').value;
+
+      // Filter requirements
+      let results = allRequirements.filter(req => {
+        let match = true;
+
+        if (keyword) {
+          const searchText = keyword.toLowerCase();
+          match = match && (
+            req.title.toLowerCase().includes(searchText) ||
+            req.description.toLowerCase().includes(searchText) ||
+            req.id.toLowerCase().includes(searchText)
+          );
+        }
+
+        if (status) {
+          match = match && req.status === status;
+        }
+
+        if (priority) {
+          match = match && req.priority === priority;
+        }
+
+        if (category) {
+          // カテゴリマッピング（英語→日本語）
+          const categoryMap = {
+            'stakeholder': 'ステークホルダ',
+            'system': 'システム要求',
+            'functional': '機能'
+          };
+          const searchTerm = categoryMap[category] || category;
+          const reqCategory = req.category ? req.category : '';
+          match = match && reqCategory.includes(searchTerm);
+        }
+
+        if (author) {
+          match = match && req.author === author;
+        }
+
+        if (tagsInput) {
+          const searchTags = tagsInput.split(',').map(t => t.trim().toLowerCase()).filter(t => t);
+          if (searchTags.length > 0 && req.tags && req.tags.length > 0) {
+            const reqTags = req.tags.map(t => t.toLowerCase());
+            match = match && searchTags.some(st => reqTags.some(rt => rt.includes(st)));
+          } else if (searchTags.length > 0) {
+            match = false;
+          }
+        }
+
+        return match;
+      });
+
+      // ビューモードに応じて表示
+      if (viewMode === 'list') {
+        renderSearchResults(results);
+      } else if (viewMode.startsWith('matrix-')) {
+        renderMatrixView(results, viewMode);
+      }
+    });
+
+    // Render search results
+    function renderSearchResults(results) {
+      const container = document.getElementById('searchResults');
+
+      if (results.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><div class="empty-state-text">検索結果が見つかりませんでした</div></div>';
+        return;
+      }
+
+      const categoryColors = {
+        stakeholder: 'background: #e3f2fd; color: #1565c0;',
+        system: 'background: #f3e5f5; color: #6a1b9a;',
+        functional: 'background: #e8f5e9; color: #2e7d32;'
+      };
+
+      const html = results.map(req => {
+        const desc = req.description.substring(0, 100) + (req.description.length > 100 ? '...' : '');
+        const categoryStyle = categoryColors[req.category] || '';
+        return '<div class="search-result-item" data-id="' + req.id + '"><div class="search-result-header"><span class="search-result-id">' + req.id + '</span><span class="search-result-title">' + req.title + '</span><span class="search-result-category" style="' + categoryStyle + '">' + req.category + '</span></div><div class="search-result-description">' + desc + '</div></div>';
+      }).join('');
+
+      container.innerHTML = html;
+
+      // Add click handlers to search results
+      container.querySelectorAll('.search-result-item').forEach(item => {
+        item.addEventListener('click', async () => {
+          const reqId = item.getAttribute('data-id');
+          const req = allRequirements.find(r => r.id === reqId);
+          if (req) {
+            // Load and select the requirement
+            await loadAndSelectRequirement(reqId);
+          }
+        });
+      });
+    }
+
+    // マトリックスビューを表示
+    function renderMatrixView(results, viewMode) {
+      const container = document.getElementById('searchResults');
+
+      let rowType, colType, rowName, colName, rowIdPrefix, colIdPrefix;
+      if (viewMode === 'matrix-stakeholder-system') {
+        rowType = 'stakeholder';
+        colType = 'system';
+        rowName = 'ステークホルダ要求';
+        colName = 'システム要求';
+        rowIdPrefix = 'STK-';
+        colIdPrefix = 'SYS-';
+      } else if (viewMode === 'matrix-system-functional') {
+        rowType = 'system';
+        colType = 'functional';
+        rowName = 'システム要求';
+        colName = 'システム機能要求';
+        rowIdPrefix = 'SYS-';
+        colIdPrefix = 'FUNC-';
+      }
+
+      // マトリックスビューでは全要求から抽出（resultsではなくallRequirements）
+      const rows = allRequirements.filter(req => {
+        const category = req.category ? req.category.toLowerCase() : '';
+        const id = req.id ? req.id.toUpperCase() : '';
+        return category.includes(rowType) ||
+               category.includes(rowName) ||
+               id.startsWith(rowIdPrefix);
+      });
+
+      const cols = allRequirements.filter(req => {
+        const category = req.category ? req.category.toLowerCase() : '';
+        const id = req.id ? req.id.toUpperCase() : '';
+        return category.includes(colType) ||
+               category.includes(colName) ||
+               id.startsWith(colIdPrefix);
+      });
+
+      if (rows.length === 0 || cols.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📊</div><div class="empty-state-text">マトリックス表示に必要な要求が見つかりませんでした</div></div>';
+        return;
+      }
+
+      // マトリックステーブルを作成
+      let html = '<div style="overflow: auto; max-height: 100%;"><table style="border-collapse: collapse; font-size: 12px; width: 100%;">';
+      html += '<thead><tr><th style="border: 1px solid var(--border); padding: 8px; background: var(--surface); position: sticky; top: 0; left: 0; z-index: 3;">' + rowName + ' \\ ' + colName + '</th>';
+
+      cols.forEach(col => {
+        html += '<th style="border: 1px solid var(--border); padding: 8px; background: var(--surface); min-width: 100px; position: sticky; top: 0; z-index: 2;">' + col.id + '<br><span style="font-weight: normal; font-size: 11px;">' + col.title.substring(0, 20) + '</span></th>';
+      });
+      html += '</tr></thead><tbody>';
+
+      rows.forEach(row => {
+        html += '<tr><td style="border: 1px solid var(--border); padding: 8px; background: var(--surface); font-weight: bold; position: sticky; left: 0; z-index: 1;">' + row.id + '<br><span style="font-weight: normal; font-size: 11px;">' + row.title.substring(0, 30) + '</span></td>';
+
+        cols.forEach(col => {
+          // 依存関係をチェック
+          const hasRelation = (row.dependencies && row.dependencies.includes(col.id)) ||
+                             (col.dependencies && col.dependencies.includes(row.id)) ||
+                             row.parentId === col.id || col.parentId === row.id;
+
+          const cellStyle = hasRelation ? 'background: var(--primary); opacity: 0.3;' : '';
+          const cellContent = hasRelation ? '●' : '';
+          html += '<td style="border: 1px solid var(--border); padding: 8px; text-align: center; ' + cellStyle + '">' + cellContent + '</td>';
+        });
+        html += '</tr>';
+      });
+
+      html += '</tbody></table></div>';
+      container.innerHTML = html;
+    }
+
+    // ビュー設定を読み込んでビュー選択リストを生成
+    async function loadViewConfig() {
+      try {
+        const response = await fetch('/api/view-config');
+        const config = await response.json();
+
+        const viewModeSelect = document.getElementById('viewMode');
+        viewModeSelect.innerHTML = '';
+
+        config.views.forEach(view => {
+          const option = document.createElement('option');
+          option.value = view.id;
+          option.textContent = view.name;
+          if (view.description) {
+            option.title = view.description;
+          }
+          viewModeSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('ビュー設定の読み込みに失敗:', error);
+      }
+    }
 
     // ツリーデータを取得
     async function loadTree() {
@@ -523,11 +1258,30 @@ app.get('/tree', (req, res) => {
 
       console.log('受信したツリーデータ:', tree.length + '件');
 
+      // Store all requirements for search
+      allRequirements = tree.map(node => node.requirement);
+
+      // 作成者リストを生成
+      const authors = new Set();
+      allRequirements.forEach(req => {
+        if (req.author) {
+          authors.add(req.author);
+        }
+      });
+      const authorSelect = document.getElementById('filterAuthor');
+      authorSelect.innerHTML = '<option value="">全ての作成者</option>';
+      Array.from(authors).sort().forEach(author => {
+        const option = document.createElement('option');
+        option.value = author;
+        option.textContent = author;
+        authorSelect.appendChild(option);
+      });
+
       // 要求を種類別にグループ化（重複チェック付き）
       const groups = {
-        stakeholder: { name: 'ステークホルダ要求', icon: '👥', color: 'stakeholder', items: [], ids: new Set() },
-        system: { name: 'システム要求', icon: '⚙️', color: 'system', items: [], ids: new Set() },
-        functional: { name: 'システム機能要求', icon: '🔧', color: 'functional', items: [], ids: new Set() }
+        stakeholder: { name: 'ステークホルダ要求', icon: '●', color: 'stakeholder', items: [], ids: new Set() },
+        system: { name: 'システム要求', icon: '■', color: 'system', items: [], ids: new Set() },
+        functional: { name: 'システム機能要求', icon: '▲', color: 'functional', items: [], ids: new Set() }
       };
 
       tree.forEach(node => {
@@ -647,9 +1401,12 @@ app.get('/tree', (req, res) => {
     }
 
     // 詳細を描画
-    function renderDetail(req) {
+    async function renderDetail(req) {
       const header = document.getElementById('detailHeader');
       const body = document.getElementById('detailBody');
+
+      // グリッドレイアウトにリセット
+      body.style.display = 'grid';
 
       const type = req.type || 'stakeholder';
       const typeLabel = type === 'stakeholder' ? 'ステークホルダ要求' :
@@ -664,75 +1421,437 @@ app.get('/tree', (req, res) => {
         </div>
       \`;
 
+      // 上位・下位要求を取得
+      let relations = { parents: [], children: [] };
+      try {
+        const relResponse = await fetch(\`/api/requirement/\${req.id}/relations\`);
+        relations = await relResponse.json();
+      } catch (error) {
+        console.error('関連要求の取得に失敗:', error);
+      }
+
+      // 上位要求のHTML生成
+      const parentsHtml = relations.parents.length > 0 ? \`
+        <div class="detail-section">
+          <h3>▲ 上位要求</h3>
+          $\{relations.parents.map(parent => \`
+            <div class="relation-link" data-req-id="$\{parent.id}">
+              <span class="relation-link-icon">$\{getTypeIcon(parent.type || parent.category)}</span>
+              <div class="relation-link-content">
+                <div class="relation-link-id">$\{parent.id}</div>
+                <div class="relation-link-title">$\{parent.title}</div>
+                <div class="relation-link-meta">
+                  <span class="relation-link-badge">$\{parent.status}</span>
+                  <span class="relation-link-badge">$\{parent.priority}</span>
+                </div>
+              </div>
+            </div>
+          \`).join('')}
+        </div>
+      \` : '';
+
+      // 下位要求のHTML生成
+      const childrenHtml = relations.children.length > 0 ? \`
+        <div class="detail-section">
+          <h3>▼ 下位要求</h3>
+          $\{relations.children.map(child => \`
+            <div class="relation-link" data-req-id="$\{child.id}">
+              <span class="relation-link-icon">$\{getTypeIcon(child.type || child.category)}</span>
+              <div class="relation-link-content">
+                <div class="relation-link-id">$\{child.id}</div>
+                <div class="relation-link-title">$\{child.title}</div>
+                <div class="relation-link-meta">
+                  <span class="relation-link-badge">$\{child.status}</span>
+                  <span class="relation-link-badge">$\{child.priority}</span>
+                </div>
+              </div>
+            </div>
+          \`).join('')}
+        </div>
+      \` : '';
+
       body.innerHTML = \`
-        <div class="detail-section">
-          <h3>基本情報</h3>
-          <div class="detail-field">
-            <div class="detail-field-label">種類</div>
-            <div class="detail-field-value">
-              <span class="badge badge-type">\${typeLabel}</span>
-            </div>
+        <div class="detail-column-left">
+          <div class="detail-section">
+            <h3>説明</h3>
+            <div class="detail-field-value">$\{req.description}</div>
           </div>
-          <div class="detail-field">
-            <div class="detail-field-label">ステータス</div>
-            <div class="detail-field-value">
-              <span class="badge badge-status">\${req.status}</span>
-            </div>
-          </div>
-          <div class="detail-field">
-            <div class="detail-field-label">優先度</div>
-            <div class="detail-field-value">
-              <span class="badge badge-priority-\${req.priority}">\${req.priority.toUpperCase()}</span>
-            </div>
-          </div>
-          <div class="detail-field">
-            <div class="detail-field-label">カテゴリ</div>
-            <div class="detail-field-value">\${req.category}</div>
-          </div>
-          \${req.author ? \`
-          <div class="detail-field">
-            <div class="detail-field-label">作成者</div>
-            <div class="detail-field-value">\${req.author}</div>
+
+          $\{req.rationale ? \`
+          <div class="detail-section">
+            <h3>理由</h3>
+            <div class="detail-field-value">$\{req.rationale}</div>
           </div>
           \` : ''}
-          \${req.assignee ? \`
-          <div class="detail-field">
-            <div class="detail-field-label">担当者</div>
-            <div class="detail-field-value">\${req.assignee}</div>
+
+          <div class="detail-section">
+            <h3>基本情報</h3>
+            <div class="detail-field">
+              <div class="detail-field-label">カテゴリ</div>
+              <div class="detail-field-value">$\{req.category}</div>
+            </div>
+            <div class="detail-field">
+              <div class="detail-field-label">優先度</div>
+              <div class="detail-field-value">
+                <span class="badge badge-priority-$\{req.priority}">$\{req.priority.toUpperCase()}</span>
+              </div>
+            </div>
+            <div class="detail-field">
+              <div class="detail-field-label">ステータス</div>
+              <div class="detail-field-value">
+                <span class="badge badge-status">$\{req.status}</span>
+              </div>
+            </div>
+            $\{req.author ? \`
+            <div class="detail-field">
+              <div class="detail-field-label">作成者</div>
+              <div class="detail-field-value">$\{req.author}</div>
+            </div>
+            \` : ''}
+            $\{req.assignee ? \`
+            <div class="detail-field">
+              <div class="detail-field-label">担当者</div>
+              <div class="detail-field-value">$\{req.assignee}</div>
+            </div>
+            \` : ''}
+          </div>
+
+          $\{req.tags && req.tags.length > 0 ? \`
+          <div class="detail-section">
+            <h3>タグ</h3>
+            <div class="tag-list">
+              $\{req.tags.map(tag => \`<span class="tag">$\{tag}</span>\`).join('')}
+            </div>
           </div>
           \` : ''}
-        </div>
 
-        <div class="detail-section">
-          <h3>説明</h3>
-          <div class="detail-field-value">\${req.description}</div>
+          $\{parentsHtml}
+          $\{childrenHtml}
         </div>
-
-        \${req.tags && req.tags.length > 0 ? \`
-        <div class="detail-section">
-          <h3>タグ</h3>
-          <div class="tag-list">
-            \${req.tags.map(tag => \`<span class="tag">\${tag}</span>\`).join('')}
-          </div>
-        </div>
-        \` : ''}
-
-        \${req.dependencies && req.dependencies.length > 0 ? \`
-        <div class="detail-section">
-          <h3>依存関係</h3>
-          <div class="detail-field-value">
-            \${req.dependencies.map(dep => \`<div>→ \${dep}</div>\`).join('')}
-          </div>
-        </div>
-        \` : ''}
       \`;
+
+      // 関連要求リンクにクリックイベントを追加
+      document.querySelectorAll('.relation-link').forEach(link => {
+        link.addEventListener('click', async () => {
+          const reqId = link.dataset.reqId;
+          await loadAndSelectRequirement(reqId);
+        });
+      });
+    }
+
+    // 要求タイプからアイコンを取得
+    function getTypeIcon(type) {
+      if (type === 'stakeholder' || (type && type.includes('ステークホルダ'))) {
+        return '●';
+      } else if (type === 'system' || (type && type.includes('システム要求'))) {
+        return '■';
+      } else if (type === 'functional' || (type && type.includes('機能'))) {
+        return '▲';
+      }
+      return '○';
+    }
+
+    // 要求IDから要求を読み込んで選択
+    async function loadAndSelectRequirement(reqId) {
+      try {
+        const response = await fetch('/api/tree');
+        const data = await response.json();
+
+        const targetNode = data.tree.find(node => node.requirement.id === reqId);
+        if (targetNode) {
+          selectRequirement(targetNode.requirement);
+        }
+      } catch (error) {
+        console.error('要求の読み込みに失敗:', error);
+      }
     }
 
     // 初期化
+    loadViewConfig();
     loadTree();
 
     // 自動更新（5秒ごと）
     setInterval(loadTree, 5000);
+
+    // チャットパネルリサイズ機能
+    const chatPanel = document.getElementById('chatPanel');
+    const chatResizer = document.getElementById('chatResizer');
+    let isResizing = false;
+    let startX = 0;
+    let startWidth = 0;
+
+    chatResizer.addEventListener('mousedown', (e) => {
+      isResizing = true;
+      startX = e.clientX;
+      startWidth = chatPanel.offsetWidth;
+      chatResizer.classList.add('resizing');
+      document.body.style.cursor = 'ew-resize';
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isResizing) return;
+
+      const diff = startX - e.clientX;
+      const newWidth = startWidth + diff;
+
+      // 最小・最大幅を制限
+      if (newWidth >= 300 && newWidth <= 800) {
+        chatPanel.style.width = newWidth + 'px';
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (isResizing) {
+        isResizing = false;
+        chatResizer.classList.remove('resizing');
+        document.body.style.cursor = '';
+      }
+    });
+
+    // Searchパネルリサイズ機能
+    const searchPanel = document.getElementById('searchPanel');
+    const searchResizer = document.getElementById('searchResizer');
+    let isResizingSearch = false;
+    let startY = 0;
+    let startHeight = 0;
+
+    searchResizer.addEventListener('mousedown', (e) => {
+      isResizingSearch = true;
+      startY = e.clientY;
+      startHeight = searchPanel.offsetHeight;
+      document.body.style.cursor = 'ns-resize';
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isResizingSearch) return;
+
+      // マウスを上に動かすと高さが減る（境界線が上がる）
+      const diff = startY - e.clientY;
+      const newHeight = startHeight + diff;
+
+      // 最小・最大高さを制限
+      if (newHeight >= 200 && newHeight <= 800) {
+        searchPanel.style.height = newHeight + 'px';
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (isResizingSearch) {
+        isResizingSearch = false;
+        document.body.style.cursor = '';
+      }
+    });
+
+    // チャット機能
+    const chatInput = document.getElementById('chatInput');
+    const chatSend = document.getElementById('chatSend');
+    const chatMessages = document.getElementById('chatMessages');
+
+    function addMessage(text, isUser = false) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'chat-message';
+
+      const avatarDiv = document.createElement('div');
+      avatarDiv.className = 'message-avatar' + (isUser ? ' user' : '');
+      avatarDiv.textContent = isUser ? 'Y' : 'C';
+
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'message-content';
+
+      const textDiv = document.createElement('div');
+      textDiv.className = 'message-text';
+      textDiv.textContent = text;
+
+      const timeDiv = document.createElement('div');
+      timeDiv.className = 'message-time';
+      timeDiv.textContent = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+
+      contentDiv.appendChild(textDiv);
+      contentDiv.appendChild(timeDiv);
+      messageDiv.appendChild(avatarDiv);
+      messageDiv.appendChild(contentDiv);
+
+      chatMessages.appendChild(messageDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function showTyping() {
+      const typingDiv = document.createElement('div');
+      typingDiv.className = 'chat-message';
+      typingDiv.id = 'typing-indicator';
+      typingDiv.innerHTML = \`
+        <div class="message-avatar">C</div>
+        <div class="message-content">
+          <div class="typing-indicator">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
+        </div>
+      \`;
+      chatMessages.appendChild(typingDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function hideTyping() {
+      const typing = document.getElementById('typing-indicator');
+      if (typing) typing.remove();
+    }
+
+    async function sendMessage() {
+      const message = chatInput.value.trim();
+      if (!message) return;
+
+      // ユーザーメッセージを追加
+      addMessage(message, true);
+      chatInput.value = '';
+      chatInput.style.height = '44px';
+      chatSend.disabled = true;
+
+      // タイピングインジケーターを表示
+      showTyping();
+
+      try {
+        // APIエンドポイントに送信
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+
+        const data = await response.json();
+        hideTyping();
+        addMessage(data.response, false);
+      } catch (error) {
+        hideTyping();
+        addMessage('申し訳ございません。エラーが発生しました。', false);
+        console.error('Chat error:', error);
+      } finally {
+        chatSend.disabled = false;
+      }
+    }
+
+    chatSend.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // テキストエリアの自動サイズ調整
+    chatInput.addEventListener('input', () => {
+      chatInput.style.height = '44px';
+      chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+    });
+  </script>
+    </div>
+    </div>
+  </div>
+
+  <!-- ビュー一覧のコンテンツ -->
+  <div class="tab-content" id="views-content">
+    <div style="flex: 1; overflow-y: auto; padding: 40px;">
+      <div style="max-width: 1200px; margin: 0 auto;">
+        <h1 style="font-size: 32px; margin-bottom: 8px;">📊 要求管理ビューアー</h1>
+        <p style="color: var(--text-secondary); margin-bottom: 40px;">
+          9種類のビューで要求を可視化・管理
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+          <a href="/list" style="text-decoration: none; color: inherit;">
+            <div style="background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border); transition: all 0.2s ease; cursor: pointer;">
+              <div style="font-size: 32px; margin-bottom: 12px;">📋</div>
+              <h3 style="font-size: 18px; margin-bottom: 8px;">一覧ビュー</h3>
+              <p style="color: var(--text-secondary); font-size: 14px;">全要求をテーブル形式で表示</p>
+            </div>
+          </a>
+
+          <a href="/status" style="text-decoration: none; color: inherit;">
+            <div style="background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border); transition: all 0.2s ease; cursor: pointer;">
+              <div style="font-size: 32px; margin-bottom: 12px;">📊</div>
+              <h3 style="font-size: 18px; margin-bottom: 8px;">ステータスビュー</h3>
+              <p style="color: var(--text-secondary); font-size: 14px;">ステータス別に要求を分類</p>
+            </div>
+          </a>
+
+          <a href="/priority" style="text-decoration: none; color: inherit;">
+            <div style="background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border); transition: all 0.2s ease; cursor: pointer;">
+              <div style="font-size: 32px; margin-bottom: 12px;">🎯</div>
+              <h3 style="font-size: 18px; margin-bottom: 8px;">優先度ビュー</h3>
+              <p style="color: var(--text-secondary); font-size: 14px;">優先度別に要求を分類</p>
+            </div>
+          </a>
+
+          <a href="/category" style="text-decoration: none; color: inherit;">
+            <div style="background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border); transition: all 0.2s ease; cursor: pointer;">
+              <div style="font-size: 32px; margin-bottom: 12px;">📑</div>
+              <h3 style="font-size: 18px; margin-bottom: 8px;">カテゴリビュー</h3>
+              <p style="color: var(--text-secondary); font-size: 14px;">カテゴリ別に要求を分類</p>
+            </div>
+          </a>
+
+          <a href="/timeline" style="text-decoration: none; color: inherit;">
+            <div style="background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border); transition: all 0.2s ease; cursor: pointer;">
+              <div style="font-size: 32px; margin-bottom: 12px;">📅</div>
+              <h3 style="font-size: 18px; margin-bottom: 8px;">タイムラインビュー</h3>
+              <p style="color: var(--text-secondary); font-size: 14px;">時系列で要求を表示</p>
+            </div>
+          </a>
+
+          <a href="/dependency" style="text-decoration: none; color: inherit;">
+            <div style="background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border); transition: all 0.2s ease; cursor: pointer;">
+              <div style="font-size: 32px; margin-bottom: 12px;">🔗</div>
+              <h3 style="font-size: 18px; margin-bottom: 8px;">依存関係ビュー</h3>
+              <p style="color: var(--text-secondary); font-size: 14px;">要求間の依存関係を可視化</p>
+            </div>
+          </a>
+
+          <a href="/tags" style="text-decoration: none; color: inherit;">
+            <div style="background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border); transition: all 0.2s ease; cursor: pointer;">
+              <div style="font-size: 32px; margin-bottom: 12px;">🏷️</div>
+              <h3 style="font-size: 18px; margin-bottom: 8px;">タグビュー</h3>
+              <p style="color: var(--text-secondary); font-size: 14px;">タグ別に要求を分類</p>
+            </div>
+          </a>
+
+          <a href="/search" style="text-decoration: none; color: inherit;">
+            <div style="background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border); transition: all 0.2s ease; cursor: pointer;">
+              <div style="font-size: 32px; margin-bottom: 12px;">🔍</div>
+              <h3 style="font-size: 18px; margin-bottom: 8px;">検索ビュー</h3>
+              <p style="color: var(--text-secondary); font-size: 14px;">要求を検索・フィルタ</p>
+            </div>
+          </a>
+
+          <a href="/stats" style="text-decoration: none; color: inherit;">
+            <div style="background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border); transition: all 0.2s ease; cursor: pointer;">
+              <div style="font-size: 32px; margin-bottom: 12px;">📈</div>
+              <h3 style="font-size: 18px; margin-bottom: 8px;">統計ビュー</h3>
+              <p style="color: var(--text-secondary); font-size: 14px;">要求の統計情報を表示</p>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // タブ切り替え機能
+    document.querySelectorAll('.tab-button').forEach(button => {
+      button.addEventListener('click', () => {
+        const tabName = button.dataset.tab;
+
+        // すべてのタブボタンとコンテンツから active クラスを削除
+        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        // クリックされたタブボタンとコンテンツに active クラスを追加
+        button.classList.add('active');
+        document.getElementById(tabName + '-content').classList.add('active');
+      });
+    });
   </script>
 </body>
 </html>
@@ -741,8 +1860,8 @@ app.get('/tree', (req, res) => {
   res.send(html);
 });
 
-// ルートページ - モダンなUIを提供
-app.get('/', (req, res) => {
+// 旧UIページ（削除予定）
+app.get('/old', (req, res) => {
   const html = `
 <!DOCTYPE html>
 <html lang="ja">
@@ -1188,6 +2307,304 @@ app.get('/api/watch', (req, res) => {
   });
 });
 
+// チャットAPIエンドポイント - MCPツール統合版
+app.post('/api/chat', express.json(), async (req, res) => {
+  try {
+    const { message } = req.body;
+    await storage.initialize();
+    await validator.initialize();
+
+    let response = '';
+    const messageLower = message.toLowerCase();
+
+    // 1. 要求の妥当性チェック
+    if (messageLower.includes('妥当性') || messageLower.includes('バリデーション') || messageLower.includes('チェック')) {
+      // 要求IDを抽出
+      const idMatch = message.match(/([A-Z]+-\d+)/i);
+
+      if (idMatch) {
+        const reqId = idMatch[1].toUpperCase();
+        const requirement = await storage.getRequirement(reqId);
+
+        if (requirement) {
+          const report = await validator.validate(reqId);
+
+          if (report.isValid) {
+            response = `✅ **要求 ${reqId} の妥当性チェック結果**\n\n`;
+            response += `**タイトル**: ${requirement.title}\n`;
+            response += `**ステータス**: すべての検証をパスしました\n\n`;
+            response += `📊 検証サマリ:\n`;
+            response += `• エラー: ${report.errorCount}件\n`;
+            response += `• 警告: ${report.warningCount}件\n`;
+            response += `• 情報: ${report.infoCount}件\n`;
+          } else {
+            response = `⚠️ **要求 ${reqId} の妥当性チェック結果**\n\n`;
+            response += `**タイトル**: ${requirement.title}\n`;
+            response += `**ステータス**: 問題が検出されました\n\n`;
+            response += `📊 検証サマリ:\n`;
+            response += `• エラー: ${report.errorCount}件\n`;
+            response += `• 警告: ${report.warningCount}件\n`;
+            response += `• 情報: ${report.infoCount}件\n\n`;
+
+            if (report.errorCount > 0) {
+              response += `🚨 **エラー**:\n`;
+              report.results.filter(r => r.severity === 'error').forEach(r => {
+                response += `• [${r.ruleName}] ${r.message}\n`;
+                if (r.suggestion) response += `  💡 提案: ${r.suggestion}\n`;
+              });
+              response += `\n`;
+            }
+
+            if (report.warningCount > 0) {
+              response += `⚠️ **警告**:\n`;
+              report.results.filter(r => r.severity === 'warning').forEach(r => {
+                response += `• [${r.ruleName}] ${r.message}\n`;
+                if (r.suggestion) response += `  💡 提案: ${r.suggestion}\n`;
+              });
+            }
+          }
+        } else {
+          response = `❌ 要求ID「${reqId}」が見つかりませんでした。\n\n要求IDを確認してください。`;
+        }
+      } else {
+        response = '要求IDを指定してください。\n\n例: 「STK-001の妥当性をチェック」';
+      }
+    }
+
+    // 2. 要求の検索
+    else if (messageLower.includes('検索') || messageLower.includes('探')) {
+      // キーワード抽出（簡易版）
+      const keywords = message.match(/「(.+?)」/);
+      const keyword = keywords ? keywords[1] : '';
+
+      if (keyword) {
+        const allReqs = await storage.getAllRequirements();
+        const results = allReqs.filter(req =>
+          req.title.includes(keyword) ||
+          req.description.includes(keyword) ||
+          (req.rationale && req.rationale.includes(keyword))
+        );
+
+        if (results.length > 0) {
+          response = `🔍 **検索結果**: キーワード「${keyword}」\n\n`;
+          response += `${results.length}件の要求が見つかりました:\n\n`;
+          results.slice(0, 10).forEach(req => {
+            const typeIcon = req.type === 'stakeholder' ? '👥' : req.type === 'system' ? '⚙️' : '🔧';
+            response += `${typeIcon} **${req.id}**: ${req.title}\n`;
+            response += `   📝 ${req.description.substring(0, 60)}...\n`;
+            response += `   🏷️ ${req.category} | 📊 ${req.priority} | ✅ ${req.status}\n\n`;
+          });
+
+          if (results.length > 10) {
+            response += `\n...他${results.length - 10}件`;
+          }
+        } else {
+          response = `🔍 キーワード「${keyword}」に一致する要求が見つかりませんでした。`;
+        }
+      } else {
+        response = '検索キーワードを「」で囲んで指定してください。\n\n例: 「搬送」を検索';
+      }
+    }
+
+    // 3. 統計情報の表示
+    else if (messageLower.includes('統計') || messageLower.includes('サマリ') || messageLower.includes('一覧')) {
+      const allReqs = await storage.getAllRequirements();
+
+      const stakeholderReqs = allReqs.filter(r => r.type === 'stakeholder');
+      const systemReqs = allReqs.filter(r => r.type === 'system');
+      const functionalReqs = allReqs.filter(r => r.type === 'functional');
+
+      const approvedReqs = allReqs.filter(r => r.status === 'approved');
+      const criticalReqs = allReqs.filter(r => r.priority === 'critical');
+      const highReqs = allReqs.filter(r => r.priority === 'high');
+
+      response = `📊 **要求管理統計情報**\n\n`;
+      response += `### 📈 総計\n`;
+      response += `• 総要求数: **${allReqs.length}件**\n\n`;
+
+      response += `### 📋 要求タイプ別\n`;
+      response += `• 👥 ステークホルダ要求: ${stakeholderReqs.length}件\n`;
+      response += `• ⚙️ システム要求: ${systemReqs.length}件\n`;
+      response += `• 🔧 機能要求: ${functionalReqs.length}件\n\n`;
+
+      response += `### ✅ ステータス\n`;
+      response += `• 承認済み: ${approvedReqs.length}件 (${Math.round(approvedReqs.length / allReqs.length * 100)}%)\n\n`;
+
+      response += `### 🚨 優先度\n`;
+      response += `• Critical: ${criticalReqs.length}件\n`;
+      response += `• High: ${highReqs.length}件\n\n`;
+
+      response += `### 📍 カテゴリ\n`;
+      const categories = [...new Set(allReqs.map(r => r.category))];
+      categories.forEach(cat => {
+        const count = allReqs.filter(r => r.category === cat).length;
+        response += `• ${cat}: ${count}件\n`;
+      });
+    }
+
+    // 4. 依存関係の分析
+    else if (messageLower.includes('依存') || messageLower.includes('関係')) {
+      const idMatch = message.match(/([A-Z]+-\d+)/i);
+
+      if (idMatch) {
+        const reqId = idMatch[1].toUpperCase();
+        const requirement = await storage.getRequirement(reqId);
+
+        if (requirement) {
+          const allReqs = await storage.getAllRequirements();
+
+          // 上位要求（この要求が依存しているもの）
+          const parents = allReqs.filter(r =>
+            requirement.dependencies.includes(r.id) || requirement.parentId === r.id
+          );
+
+          // 下位要求（この要求に依存しているもの）
+          const children = allReqs.filter(r =>
+            r.dependencies.includes(reqId) || r.parentId === reqId
+          );
+
+          response = `🔗 **依存関係分析**: ${reqId}\n\n`;
+          response += `**タイトル**: ${requirement.title}\n\n`;
+
+          if (parents.length > 0) {
+            response += `### ⬆️ 上位要求 (${parents.length}件)\n`;
+            parents.forEach(p => {
+              const typeIcon = p.type === 'stakeholder' ? '👥' : p.type === 'system' ? '⚙️' : '🔧';
+              response += `• ${typeIcon} **${p.id}**: ${p.title}\n`;
+            });
+            response += `\n`;
+          } else {
+            response += `### ⬆️ 上位要求\n• なし（最上位要求です）\n\n`;
+          }
+
+          if (children.length > 0) {
+            response += `### ⬇️ 下位要求 (${children.length}件)\n`;
+            children.forEach(c => {
+              const typeIcon = c.type === 'stakeholder' ? '👥' : c.type === 'system' ? '⚙️' : '🔧';
+              response += `• ${typeIcon} **${c.id}**: ${c.title}\n`;
+            });
+          } else {
+            response += `### ⬇️ 下位要求\n• なし（最下位要求です）\n`;
+          }
+        } else {
+          response = `❌ 要求ID「${reqId}」が見つかりませんでした。`;
+        }
+      } else {
+        response = '要求IDを指定してください。\n\n例: 「STK-001の依存関係を分析」';
+      }
+    }
+
+    // 5. 要求の詳細表示
+    else if (messageLower.includes('詳細') || messageLower.includes('表示')) {
+      const idMatch = message.match(/([A-Z]+-\d+)/i);
+
+      if (idMatch) {
+        const reqId = idMatch[1].toUpperCase();
+        const requirement = await storage.getRequirement(reqId);
+
+        if (requirement) {
+          const typeIcon = requirement.type === 'stakeholder' ? '👥' : requirement.type === 'system' ? '⚙️' : '🔧';
+          const statusIcon = requirement.status === 'approved' ? '✅' : requirement.status === 'proposed' ? '📝' : '📋';
+          const priorityIcon = requirement.priority === 'critical' ? '🚨' : requirement.priority === 'high' ? '⚠️' : requirement.priority === 'medium' ? '📌' : '📍';
+
+          response = `${typeIcon} **要求詳細**: ${reqId}\n\n`;
+          response += `### 基本情報\n`;
+          response += `**タイトル**: ${requirement.title}\n`;
+          response += `**ステータス**: ${statusIcon} ${requirement.status}\n`;
+          response += `**優先度**: ${priorityIcon} ${requirement.priority}\n`;
+          response += `**カテゴリ**: ${requirement.category}\n`;
+          response += `**タイプ**: ${requirement.type || '未設定'}\n\n`;
+
+          response += `### 📝 説明\n${requirement.description}\n\n`;
+
+          if (requirement.rationale) {
+            response += `### 💡 理由\n${requirement.rationale}\n\n`;
+          }
+
+          if (requirement.tags.length > 0) {
+            response += `### 🏷️ タグ\n${requirement.tags.join(', ')}\n\n`;
+          }
+
+          response += `### 📅 日時\n`;
+          response += `• 作成: ${new Date(requirement.createdAt).toLocaleString('ja-JP')}\n`;
+          response += `• 更新: ${new Date(requirement.updatedAt).toLocaleString('ja-JP')}\n`;
+        } else {
+          response = `❌ 要求ID「${reqId}」が見つかりませんでした。`;
+        }
+      } else {
+        response = '要求IDを指定してください。\n\n例: 「STK-001の詳細を表示」';
+      }
+    }
+
+    // 6. 要求の更新（簡易版 - 説明の更新のみ）
+    else if (messageLower.includes('更新') || messageLower.includes('変更')) {
+      const idMatch = message.match(/([A-Z]+-\d+)/i);
+
+      if (idMatch) {
+        const reqId = idMatch[1].toUpperCase();
+        const requirement = await storage.getRequirement(reqId);
+
+        if (requirement) {
+          // 現在の情報を表示
+          response = `📝 **要求の更新**: ${reqId}\n\n`;
+          response += `**現在のタイトル**: ${requirement.title}\n\n`;
+          response += `更新機能は現在開発中です。\n\n`;
+          response += `以下の情報を指定することで、要求を更新できるようになります:\n`;
+          response += `• タイトル\n`;
+          response += `• 説明\n`;
+          response += `• ステータス (draft/proposed/approved)\n`;
+          response += `• 優先度 (critical/high/medium/low)\n`;
+          response += `• タグ\n\n`;
+          response += `現在は、左側のツリービューから要求をクリックして手動で編集してください。`;
+        } else {
+          response = `❌ 要求ID「${reqId}」が見つかりませんでした。`;
+        }
+      } else {
+        response = '更新する要求IDを指定してください。\n\n例: 「STK-001を更新」';
+      }
+    }
+
+    // 7. デフォルトヘルプ
+    else {
+      response = `こんにちは！要求管理システムのアシスタントです。🤖\n\n`;
+      response += `以下の操作ができます:\n\n`;
+      response += `### 📋 利用可能なコマンド\n\n`;
+      response += `**1. 妥当性チェック** ✅\n`;
+      response += `例: 「STK-001の妥当性をチェック」\n`;
+      response += `• 要求の整合性を検証します\n\n`;
+
+      response += `**2. 要求検索** 🔍\n`;
+      response += `例: 「搬送」を検索\n`;
+      response += `• キーワードで要求を検索します\n\n`;
+
+      response += `**3. 統計情報** 📊\n`;
+      response += `例: 「統計を表示」\n`;
+      response += `• 要求の統計情報を表示します\n\n`;
+
+      response += `**4. 依存関係分析** 🔗\n`;
+      response += `例: 「SYS-001の依存関係を分析」\n`;
+      response += `• 上位・下位要求を表示します\n\n`;
+
+      response += `**5. 要求詳細表示** 📋\n`;
+      response += `例: 「FUNC-001の詳細を表示」\n`;
+      response += `• 要求の完全な情報を表示します\n\n`;
+
+      response += `**6. 要求更新** 📝\n`;
+      response += `例: 「STK-001を更新」\n`;
+      response += `• 要求の情報を更新します（開発中）\n\n`;
+
+      response += `何をお手伝いしましょうか？`;
+    }
+
+    res.json({ response });
+  } catch (error: any) {
+    console.error('Chat API error:', error);
+    res.status(500).json({
+      response: `❌ エラーが発生しました:\n\n${error.message}\n\nもう一度お試しください。`
+    });
+  }
+});
+
 // ツリービューAPIエンドポイント
 app.get('/api/tree', async (req, res) => {
   try {
@@ -1217,6 +2634,84 @@ app.get('/api/tree', async (req, res) => {
       tree: [],
       count: 0,
     });
+  }
+});
+
+// ビュー設定を取得するAPIエンドポイント
+app.get('/api/view-config', async (req, res) => {
+  try {
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    const configPath = path.join(process.cwd(), 'view-config.json');
+
+    try {
+      const configData = await fs.readFile(configPath, 'utf-8');
+      const config = JSON.parse(configData);
+      res.json(config);
+    } catch (error) {
+      // ファイルが存在しない場合はデフォルト設定を返す
+      res.json({
+        views: [
+          { id: 'list', name: 'リスト', type: 'list' },
+          { id: 'matrix-stakeholder-system', name: 'マトリックス: ステークホルダ→システム', type: 'matrix' },
+          { id: 'matrix-system-functional', name: 'マトリックス: システム→機能', type: 'matrix' }
+        ]
+      });
+    }
+  } catch (error: any) {
+    res.json({
+      error: error.message,
+      views: [
+        { id: 'list', name: 'リスト', type: 'list' }
+      ]
+    });
+  }
+});
+
+// 要求の上位・下位関係を取得するAPIエンドポイント
+app.get('/api/requirement/:id/relations', async (req, res) => {
+  try {
+    await storage.initialize();
+    const { id } = req.params;
+    const requirement = await storage.getRequirement(id);
+
+    if (!requirement) {
+      res.json({ error: '要求が見つかりません', parents: [], children: [] });
+      return;
+    }
+
+    const allRequirements = await storage.getAllRequirements();
+
+    // 上位要求を取得（この要求がdependenciesに含むもの、またはparentIdで指定されているもの）
+    const parents = allRequirements.filter(r =>
+      requirement.dependencies.includes(r.id) || requirement.parentId === r.id
+    );
+
+    // 下位要求を取得（この要求をdependenciesに含む、またはparentIdとして指定しているもの）
+    const children = allRequirements.filter(r =>
+      r.dependencies.includes(id) || r.parentId === id
+    );
+
+    res.json({
+      parents: parents.map(r => ({
+        id: r.id,
+        title: r.title,
+        type: r.type,
+        category: r.category,
+        status: r.status,
+        priority: r.priority
+      })),
+      children: children.map(r => ({
+        id: r.id,
+        title: r.title,
+        type: r.type,
+        category: r.category,
+        status: r.status,
+        priority: r.priority
+      }))
+    });
+  } catch (error: any) {
+    res.json({ error: error.message, parents: [], children: [] });
   }
 });
 

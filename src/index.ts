@@ -18,6 +18,7 @@ import { ImpactAnalyzer } from './analyzer.js';
 import { ViewExporter } from './views.js';
 import { Requirement, RequirementStatus, RequirementPriority, ChangeProposal } from './types.js';
 import { OperationLogger } from './operation-logger.js';
+import { RequirementValidator } from './validator.js';
 
 // Zodスキーマの定義
 const AddRequirementSchema = z.object({
@@ -78,18 +79,24 @@ const ProposeChangeSchema = z.object({
   })).describe('提案する変更内容'),
 });
 
+const ValidateRequirementSchema = z.object({
+  id: z.string().describe('妥当性チェックする要求のID'),
+});
+
 class RequirementsMCPServer {
   private server: Server;
   private storage: RequirementsStorage;
   private analyzer: ImpactAnalyzer;
   private viewExporter: ViewExporter;
   private logger: OperationLogger;
+  private validator: RequirementValidator;
 
   constructor() {
     this.storage = new RequirementsStorage('./data');
     this.analyzer = new ImpactAnalyzer(this.storage);
     this.viewExporter = new ViewExporter(this.storage);
     this.logger = new OperationLogger('./data');
+    this.validator = new RequirementValidator(this.storage);
 
     // ビュー自動更新コールバックを設定
     this.storage.setViewUpdateCallback(async () => {
@@ -149,6 +156,8 @@ class RequirementsMCPServer {
             return await this.handleGetDependencyGraph(args);
           case 'propose_change':
             return await this.handleProposeChange(args);
+          case 'validate_requirement':
+            return await this.handleValidateRequirement(args);
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
@@ -293,6 +302,17 @@ class RequirementsMCPServer {
             },
           },
           required: ['targetRequirementId', 'proposedChanges'],
+        },
+      },
+      {
+        name: 'validate_requirement',
+        description: '要求の妥当性をチェックします。上位・下位要求との整合性、詳細化、分解、粒度などを検証します。',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', description: '妥当性チェックする要求のID' },
+          },
+          required: ['id'],
         },
       },
     ];
@@ -478,9 +498,80 @@ class RequirementsMCPServer {
     };
   }
 
+  private async handleValidateRequirement(args: any) {
+    const params = ValidateRequirementSchema.parse(args);
+    const report = await this.validator.validate(params.id);
+
+    // レポートを整形
+    let text = `## 要求妥当性チェック結果\n\n`;
+    text += `**要求ID**: ${report.requirementId}\n`;
+    text += `**タイトル**: ${report.requirementTitle}\n`;
+    text += `**チェック日時**: ${report.timestamp.toLocaleString('ja-JP')}\n\n`;
+    text += `**妥当性**: ${report.isValid ? '✅ 妥当' : '❌ 問題あり'}\n`;
+    text += `- エラー: ${report.errorCount}件\n`;
+    text += `- 警告: ${report.warningCount}件\n`;
+    text += `- 情報: ${report.infoCount}件\n\n`;
+
+    if (report.results.length > 0) {
+      text += `### 詳細\n\n`;
+
+      const errors = report.results.filter(r => r.severity === 'error');
+      const warnings = report.results.filter(r => r.severity === 'warning');
+      const infos = report.results.filter(r => r.severity === 'info');
+
+      if (errors.length > 0) {
+        text += `#### ❌ エラー\n\n`;
+        for (const result of errors) {
+          text += `**[${result.ruleId}] ${result.ruleName}**\n`;
+          text += `- ${result.message}\n`;
+          if (result.suggestion) {
+            text += `- 💡 提案: ${result.suggestion}\n`;
+          }
+          text += `\n`;
+        }
+      }
+
+      if (warnings.length > 0) {
+        text += `#### ⚠️ 警告\n\n`;
+        for (const result of warnings) {
+          text += `**[${result.ruleId}] ${result.ruleName}**\n`;
+          text += `- ${result.message}\n`;
+          if (result.suggestion) {
+            text += `- 💡 提案: ${result.suggestion}\n`;
+          }
+          text += `\n`;
+        }
+      }
+
+      if (infos.length > 0) {
+        text += `#### ℹ️ 情報\n\n`;
+        for (const result of infos) {
+          text += `**[${result.ruleId}] ${result.ruleName}**\n`;
+          text += `- ${result.message}\n`;
+          if (result.suggestion) {
+            text += `- 💡 提案: ${result.suggestion}\n`;
+          }
+          text += `\n`;
+        }
+      }
+    } else {
+      text += `すべてのチェックに合格しました！\n`;
+    }
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text,
+        },
+      ],
+    };
+  }
+
   async start(): Promise<void> {
     await this.storage.initialize();
     await this.logger.initialize();
+    await this.validator.initialize();
 
     const transport = new StdioServerTransport();
     await this.server.connect(transport);

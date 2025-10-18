@@ -6,6 +6,7 @@ export interface Requirement {
   id: string;
   title: string;
   description: string;
+  rationale?: string; // 要求の理由・根拠
   status: RequirementStatus;
   priority: RequirementPriority;
   category: string;

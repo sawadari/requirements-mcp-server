@@ -1,0 +1,45 @@
+{
+  "views": [
+    {
+      "id": "list",
+      "name": "リスト",
+      "type": "list",
+      "description": "要求をリスト形式で表示"
+    },
+    {
+      "id": "matrix-stakeholder-system",
+      "name": "マトリックス: ステークホルダ→システム",
+      "type": "matrix",
+      "description": "ステークホルダ要求とシステム要求のトレーサビリティマトリックス",
+      "rowType": "stakeholder",
+      "colType": "system",
+      "rowName": "ステークホルダ要求",
+      "colName": "システム要求"
+    },
+    {
+      "id": "matrix-system-functional",
+      "name": "マトリックス: システム→機能",
+      "type": "matrix",
+      "description": "システム要求とシステム機能要求のトレーサビリティマトリックス",
+      "rowType": "system",
+      "colType": "functional",
+      "rowName": "システム要求",
+      "colName": "システム機能要求"
+    }
+  ],
+  "customViews": {
+    "enabled": true,
+    "description": "カスタムビューを追加する場合は、このセクションにビュー定義を追加してください",
+    "examples": [
+      {
+        "id": "custom-matrix-1",
+        "name": "カスタムマトリックス",
+        "type": "matrix",
+        "rowType": "stakeholder",
+        "colType": "functional",
+        "rowName": "ステークホルダ要求",
+        "colName": "システム機能要求"
+      }
+    ]
+  }
+}
