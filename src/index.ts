@@ -19,6 +19,8 @@ import { ViewExporter } from './views.js';
 import { Requirement, RequirementStatus, RequirementPriority, ChangeProposal } from './types.js';
 import { OperationLogger } from './operation-logger.js';
 import { RequirementValidator } from './validator.js';
+import { ValidationEngine } from './validation/validation-engine.js';
+import { NLPAnalyzer } from './validation/nlp-analyzer.js';
 
 // Zodスキーマの定義
 const AddRequirementSchema = z.object({
@@ -81,6 +83,17 @@ const ProposeChangeSchema = z.object({
 
 const ValidateRequirementSchema = z.object({
   id: z.string().describe('妥当性チェックする要求のID'),
+  useLLM: z.boolean().optional().describe('LLM評価を使用するか'),
+  updateMetrics: z.boolean().optional().describe('NLP指標を更新するか'),
+});
+
+const ValidateAllRequirementsSchema = z.object({
+  useLLM: z.boolean().optional().describe('LLM評価を使用するか'),
+  updateMetrics: z.boolean().optional().describe('NLP指標を更新するか'),
+});
+
+const GetValidationReportSchema = z.object({
+  format: z.enum(['json', 'markdown']).optional().describe('レポート形式（デフォルト: json）'),
 });
 
 class RequirementsMCPServer {
@@ -90,6 +103,8 @@ class RequirementsMCPServer {
   private viewExporter: ViewExporter;
   private logger: OperationLogger;
   private validator: RequirementValidator;
+  private validationEngine: ValidationEngine | null = null;
+  private validationResults: Map<string, any> = new Map();
 
   constructor() {
     this.storage = new RequirementsStorage('./data');
@@ -97,6 +112,14 @@ class RequirementsMCPServer {
     this.viewExporter = new ViewExporter(this.storage);
     this.logger = new OperationLogger('./data');
     this.validator = new RequirementValidator(this.storage);
+
+    // ValidationEngineを非同期で初期化
+    ValidationEngine.create().then(engine => {
+      this.validationEngine = engine;
+      console.error('ValidationEngine initialized');
+    }).catch(error => {
+      console.error('Failed to initialize ValidationEngine:', error);
+    });
 
     // ビュー自動更新コールバックを設定
     this.storage.setViewUpdateCallback(async () => {
@@ -158,6 +181,10 @@ class RequirementsMCPServer {
             return await this.handleProposeChange(args);
           case 'validate_requirement':
             return await this.handleValidateRequirement(args);
+          case 'validate_all_requirements':
+            return await this.handleValidateAllRequirements(args);
+          case 'get_validation_report':
+            return await this.handleGetValidationReport(args);
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
@@ -306,13 +333,36 @@ class RequirementsMCPServer {
       },
       {
         name: 'validate_requirement',
-        description: '要求の妥当性をチェックします。上位・下位要求との整合性、詳細化、分解、粒度などを検証します。',
+        description: '要求の妥当性をチェックします。階層構造、グラフヘルス、抽象度、MECE、品質スタイルの5つのドメインで検証を実行し、違反と推奨事項を返します。',
         inputSchema: {
           type: 'object',
           properties: {
             id: { type: 'string', description: '妥当性チェックする要求のID' },
+            useLLM: { type: 'boolean', description: 'LLM評価を使用するか（デフォルト: false）' },
+            updateMetrics: { type: 'boolean', description: 'NLP指標を更新するか（デフォルト: true）' },
           },
           required: ['id'],
+        },
+      },
+      {
+        name: 'validate_all_requirements',
+        description: 'すべての要求を一括検証します。階層構造、グラフヘルス、抽象度、MECE、品質スタイルの全ドメインをチェックし、検証結果をキャッシュします。',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            useLLM: { type: 'boolean', description: 'LLM評価を使用するか（デフォルト: false）' },
+            updateMetrics: { type: 'boolean', description: 'NLP指標を更新するか（デフォルト: true）' },
+          },
+        },
+      },
+      {
+        name: 'get_validation_report',
+        description: '検証結果のレポートを生成します。最後に実行した検証結果から、サマリー、違反数別内訳、ドメイン別集計、違反のある要求リストを含むレポートを出力します。',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            format: { type: 'string', enum: ['json', 'markdown'], description: 'レポート形式（デフォルト: json）' },
+          },
         },
       },
     ];
@@ -500,62 +550,82 @@ class RequirementsMCPServer {
 
   private async handleValidateRequirement(args: any) {
     const params = ValidateRequirementSchema.parse(args);
-    const report = await this.validator.validate(params.id);
+
+    if (!this.validationEngine) {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: 'ValidationEngine is not initialized yet. Please try again in a moment.',
+          },
+        ],
+      };
+    }
+
+    const requirement = await this.storage.getRequirement(params.id);
+    if (!requirement) {
+      throw new Error(`Requirement ${params.id} not found`);
+    }
+
+    const allRequirements = await this.storage.getAllRequirements();
+    const requirementsMap = new Map(allRequirements.map(r => [r.id, r]));
+
+    const result = await this.validationEngine.validateRequirement(
+      requirement,
+      requirementsMap,
+      {
+        useLLM: params.useLLM ?? false,
+        updateMetrics: params.updateMetrics ?? true,
+      }
+    );
+
+    // 結果をキャッシュ
+    this.validationResults.set(params.id, result);
 
     // レポートを整形
-    let text = `## 要求妥当性チェック結果\n\n`;
-    text += `**要求ID**: ${report.requirementId}\n`;
-    text += `**タイトル**: ${report.requirementTitle}\n`;
-    text += `**チェック日時**: ${report.timestamp.toLocaleString('ja-JP')}\n\n`;
-    text += `**妥当性**: ${report.isValid ? '✅ 妥当' : '❌ 問題あり'}\n`;
-    text += `- エラー: ${report.errorCount}件\n`;
-    text += `- 警告: ${report.warningCount}件\n`;
-    text += `- 情報: ${report.infoCount}件\n\n`;
+    let text = `## 要求検証結果\n\n`;
+    text += `**要求ID**: ${requirement.id}\n`;
+    text += `**タイトル**: ${requirement.title}\n`;
+    text += `**検証日時**: ${new Date(result.validatedAt).toLocaleString('ja-JP')}\n\n`;
+    text += `**結果**: ${result.passed ? '✅ 合格' : '❌ 違反あり'}\n`;
+    text += `**品質スコア**: ${result.score}/100\n`;
+    text += `**違反数**: ${result.violations.length}件\n\n`;
 
-    if (report.results.length > 0) {
-      text += `### 詳細\n\n`;
-
-      const errors = report.results.filter(r => r.severity === 'error');
-      const warnings = report.results.filter(r => r.severity === 'warning');
-      const infos = report.results.filter(r => r.severity === 'info');
+    if (result.violations.length > 0) {
+      const errors = result.violations.filter(v => v.severity === 'error');
+      const warnings = result.violations.filter(v => v.severity === 'warning');
+      const infos = result.violations.filter(v => v.severity === 'info');
 
       if (errors.length > 0) {
-        text += `#### ❌ エラー\n\n`;
-        for (const result of errors) {
-          text += `**[${result.ruleId}] ${result.ruleName}**\n`;
-          text += `- ${result.message}\n`;
-          if (result.suggestion) {
-            text += `- 💡 提案: ${result.suggestion}\n`;
-          }
+        text += `### ❌ エラー (${errors.length}件)\n\n`;
+        for (const v of errors) {
+          text += `**[${v.ruleId}] ${v.message}**\n`;
+          if (v.details) text += `- ${v.details}\n`;
+          if (v.suggestedFix) text += `- 💡 ${v.suggestedFix}\n`;
           text += `\n`;
         }
       }
 
       if (warnings.length > 0) {
-        text += `#### ⚠️ 警告\n\n`;
-        for (const result of warnings) {
-          text += `**[${result.ruleId}] ${result.ruleName}**\n`;
-          text += `- ${result.message}\n`;
-          if (result.suggestion) {
-            text += `- 💡 提案: ${result.suggestion}\n`;
-          }
+        text += `### ⚠️ 警告 (${warnings.length}件)\n\n`;
+        for (const v of warnings) {
+          text += `**[${v.ruleId}] ${v.message}**\n`;
+          if (v.details) text += `- ${v.details}\n`;
+          if (v.suggestedFix) text += `- 💡 ${v.suggestedFix}\n`;
           text += `\n`;
         }
       }
 
       if (infos.length > 0) {
-        text += `#### ℹ️ 情報\n\n`;
-        for (const result of infos) {
-          text += `**[${result.ruleId}] ${result.ruleName}**\n`;
-          text += `- ${result.message}\n`;
-          if (result.suggestion) {
-            text += `- 💡 提案: ${result.suggestion}\n`;
-          }
+        text += `### ℹ️ 情報 (${infos.length}件)\n\n`;
+        for (const v of infos) {
+          text += `**[${v.ruleId}] ${v.message}**\n`;
+          if (v.details) text += `- ${v.details}\n`;
           text += `\n`;
         }
       }
     } else {
-      text += `すべてのチェックに合格しました！\n`;
+      text += `すべての検証ルールに合格しました！\n`;
     }
 
     return {
@@ -566,6 +636,115 @@ class RequirementsMCPServer {
         },
       ],
     };
+  }
+
+  private async handleValidateAllRequirements(args: any) {
+    const params = ValidateAllRequirementsSchema.parse(args);
+
+    if (!this.validationEngine) {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: 'ValidationEngine is not initialized yet. Please try again in a moment.',
+          },
+        ],
+      };
+    }
+
+    const allRequirements = await this.storage.getAllRequirements();
+    const requirementsMap = new Map(allRequirements.map(r => [r.id, r]));
+
+    const results = await this.validationEngine.validateAll(
+      requirementsMap,
+      {
+        useLLM: params.useLLM ?? false,
+        updateMetrics: params.updateMetrics ?? true,
+      }
+    );
+
+    // 結果をキャッシュ
+    this.validationResults = results;
+
+    const totalRequirements = results.size;
+    const passedRequirements = Array.from(results.values()).filter(r => r.passed).length;
+    const totalViolations = Array.from(results.values()).reduce(
+      (sum, r) => sum + r.violations.length,
+      0
+    );
+
+    let text = `## 全要求検証完了\n\n`;
+    text += `- 総要求数: ${totalRequirements}\n`;
+    text += `- 合格: ${passedRequirements} (${((passedRequirements / totalRequirements) * 100).toFixed(1)}%)\n`;
+    text += `- 総違反数: ${totalViolations}\n\n`;
+    text += `検証結果がキャッシュされました。詳細なレポートは \`get_validation_report\` ツールで取得できます。\n`;
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text,
+        },
+      ],
+    };
+  }
+
+  private async handleGetValidationReport(args: any) {
+    const params = GetValidationReportSchema.parse(args);
+
+    if (!this.validationEngine) {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: 'ValidationEngine is not initialized yet.',
+          },
+        ],
+      };
+    }
+
+    if (this.validationResults.size === 0) {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: '検証結果がありません。先に `validate_all_requirements` を実行してください。',
+          },
+        ],
+      };
+    }
+
+    const allRequirements = await this.storage.getAllRequirements();
+    const requirementsMap = new Map(allRequirements.map(r => [r.id, r]));
+
+    const format = params.format || 'json';
+
+    if (format === 'markdown') {
+      const report = this.validationEngine.generateReport(this.validationResults, requirementsMap);
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: report,
+          },
+        ],
+      };
+    } else {
+      // JSON形式
+      const resultArray = Array.from(this.validationResults.entries()).map(([id, result]) => ({
+        requirementId: id,
+        ...result,
+      }));
+
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify(resultArray, null, 2),
+          },
+        ],
+      };
+    }
   }
 
   async start(): Promise<void> {

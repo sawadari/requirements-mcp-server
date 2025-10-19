@@ -6,12 +6,14 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { Requirement, ChangeProposal } from './types.js';
+import { ValidationService } from './validation-service.js';
 
 export class RequirementsStorage {
   private requirements: Map<string, Requirement> = new Map();
   private proposals: Map<string, ChangeProposal> = new Map();
   private dataDir: string;
   private viewUpdateCallback?: () => Promise<void>;
+  private validationService?: ValidationService;
 
   constructor(dataDir: string = './data') {
     this.dataDir = dataDir;
@@ -24,10 +26,23 @@ export class RequirementsStorage {
     this.viewUpdateCallback = callback;
   }
 
+  /**
+   * ValidationServiceを設定
+   */
+  setValidationService(service: ValidationService): void {
+    this.validationService = service;
+  }
+
   async initialize(): Promise<void> {
     try {
       await fs.mkdir(this.dataDir, { recursive: true });
       await this.load();
+
+      // ValidationServiceを初期化
+      if (!this.validationService) {
+        this.validationService = new ValidationService();
+        await this.validationService.initialize();
+      }
     } catch (error) {
       console.error('Failed to initialize storage:', error);
       throw error;
@@ -106,8 +121,25 @@ export class RequirementsStorage {
   // Requirements CRUD operations
   async addRequirement(req: Requirement): Promise<Requirement> {
     this.requirements.set(req.id, req);
+
+    // 自動検証・修正を実行
+    if (this.validationService) {
+      const result = await this.validationService.validateAndFix(
+        req,
+        this.requirements
+      );
+
+      // 修正が適用された場合、修正後の要求を使用
+      if (result.fixResult?.applied) {
+        this.requirements = result.modifiedRequirements;
+        console.error(
+          `[Storage] Auto-fix applied ${result.fixResult.changesApplied} changes for ${req.id}`
+        );
+      }
+    }
+
     await this.save();
-    return req;
+    return this.requirements.get(req.id) || req;
   }
 
   async getRequirement(id: string): Promise<Requirement | undefined> {
@@ -132,8 +164,25 @@ export class RequirementsStorage {
     };
 
     this.requirements.set(id, updated);
+
+    // 自動検証・修正を実行
+    if (this.validationService) {
+      const result = await this.validationService.validateAndFix(
+        updated,
+        this.requirements
+      );
+
+      // 修正が適用された場合、修正後の要求を使用
+      if (result.fixResult?.applied) {
+        this.requirements = result.modifiedRequirements;
+        console.error(
+          `[Storage] Auto-fix applied ${result.fixResult.changesApplied} changes for ${id}`
+        );
+      }
+    }
+
     await this.save();
-    return updated;
+    return this.requirements.get(id);
   }
 
   async deleteRequirement(id: string): Promise<boolean> {

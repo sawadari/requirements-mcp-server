@@ -1,0 +1,219 @@
+{
+  // 修正ポリシー定義 - 製造業MBSE標準
+  "policy": "manufacturing-mbse-default",
+  "version": "1.0.0",
+  "description": "要求品質違反に対する修正アクションの定義。可逆性・局所化→波及・段階的適用を原則とする。",
+
+  // 修正の基本原則
+  "principles": {
+    "reversibility": "すべての修正はChangeSetとして記録し、ロールバック可能",
+    "locality_first": "まず当該要求を修正→影響集合（親・子・兄弟・横依存）に順次適用",
+    "unique_responsibility": "分割・統合は親子関係とMECEの観点で比較対象を明示",
+    "staged_application": "Strict（即時修復）とSuggest（承認後適用）を区別"
+  },
+
+  // 停止条件
+  "stopping": {
+    "max_iterations": 5,
+    "fixed_point": "no_new_strict_violations",
+    "description": "各ChangeSet適用後に再検証し、Strict違反が0で停止"
+  },
+
+  // 修正ルール一覧（優先度順）
+  "rules": [
+    {
+      "id": "fix-graph-cycle",
+      "whenViolation": "graph.cycle",
+      "priority": 100,
+      "severity": "strict",
+      "description": "循環依存を検出し、最小フィードバック辺を切断",
+      "actions": [
+        {
+          "use": "break_cycle",
+          "mode": "auto",
+          "params": {
+            "cut_strategy": "min_feedback_edge_set",
+            "preserve_critical": true
+          },
+          "onSuccess": ["toposort_and_lock", "revalidate_graph"]
+        }
+      ]
+    },
+
+    {
+      "id": "fix-atomicity-low",
+      "whenViolation": "atomicity.low",
+      "priority": 90,
+      "severity": "suggest",
+      "description": "単一性が低い要求を分割し、必要に応じて統合親を作成",
+      "guard": {
+        "level": ["system", "system_functional"],
+        "min_confidence": 0.7
+      },
+      "actions": [
+        {
+          "use": "split_requirement",
+          "mode": "assist",
+          "params": {
+            "max_tokens": 120,
+            "split_on": ["list", "and_or", "multi_shall", "semicolon"],
+            "llm_compare": true
+          },
+          "onSuccess": ["rewire_edges", "revalidate_siblings"]
+        },
+        {
+          "use": "promote_integrated_parent",
+          "mode": "assist",
+          "condition": "split_count >= 3",
+          "params": {
+            "parent_title_pattern": "{original_title}（統合）"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "fix-dup-sibling-high",
+      "whenViolation": "dup.sibling.high",
+      "priority": 80,
+      "severity": "suggest",
+      "description": "兄弟要求間の高い類似度を検出し、統合を提案",
+      "guard": {
+        "min_similarity": 0.85,
+        "same_parent": true
+      },
+      "actions": [
+        {
+          "use": "merge_requirements",
+          "mode": "assist",
+          "params": {
+            "canonical_criteria": ["in_degree", "stability", "age"],
+            "normalize": ["synonyms", "units"],
+            "preserve_conflicts": true
+          },
+          "onSuccess": ["alias_canonical", "dedupe_edges", "revalidate_siblings"]
+        }
+      ]
+    },
+
+    {
+      "id": "fix-abstraction-gap",
+      "whenViolation": "abstraction.gap.invalid",
+      "priority": 70,
+      "severity": "suggest",
+      "description": "親子間の抽象度段差を修正（中間層導入または子の再配置）",
+      "actions": [
+        {
+          "use": "introduce_intermediate",
+          "mode": "assist",
+          "params": {
+            "max_gap": 2,
+            "llm_draft": true
+          },
+          "onSuccess": ["rewire_edges", "recalc_abstraction_scores"]
+        },
+        {
+          "use": "rebalance_children",
+          "mode": "assist",
+          "params": {
+            "target_gap": 1,
+            "redistribute": true
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "fix-mece-coverage-low",
+      "whenViolation": "mece.coverage.low",
+      "priority": 60,
+      "severity": "suggest",
+      "description": "親要求の未被覆スパンを検出し、子要求案を提案",
+      "guard": {
+        "min_coverage": 0.7
+      },
+      "actions": [
+        {
+          "use": "propose_missing_children",
+          "mode": "assist",
+          "params": {
+            "llm_extract_uncovered": true,
+            "max_proposals": 5
+          },
+          "onSuccess": ["revalidate_parent_coverage"]
+        },
+        {
+          "use": "tighten_parent_text",
+          "mode": "assist",
+          "params": {
+            "clarify": ["scope", "constraints", "conditions"]
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "fix-subject-missing",
+      "whenViolation": "E3",
+      "priority": 50,
+      "severity": "suggest",
+      "description": "主語が欠落している要求に主語を追加",
+      "actions": [
+        {
+          "use": "rewrite_text",
+          "mode": "assist",
+          "params": {
+            "add_subject": true,
+            "default_subject": "システムは",
+            "preserve_meaning": true
+          },
+          "onSuccess": ["revalidate_content"]
+        }
+      ]
+    },
+
+    {
+      "id": "fix-ambiguous-terms",
+      "whenViolation": "E1",
+      "priority": 40,
+      "severity": "suggest",
+      "description": "曖昧な表現（など、適切に）を具体化",
+      "actions": [
+        {
+          "use": "rewrite_text",
+          "mode": "assist",
+          "params": {
+            "replace_ambiguous": true,
+            "ambiguous_patterns": ["など", "適切に", "必要に応じて"],
+            "llm_suggest_specific": true
+          },
+          "onSuccess": ["revalidate_content"]
+        }
+      ]
+    }
+  ],
+
+  // 影響波及の順序定義
+  "propagation": {
+    "order": ["target", "parent", "siblings", "children", "cross_dependencies", "tests"],
+    "description": "修正対象→親→兄弟→子→横依存→テストの順で局所から外周へ",
+    "revalidate_after_each": true
+  },
+
+  // ガバナンス設定
+  "governance": {
+    "approval_required": {
+      "operations": ["split_requirement", "merge_requirements", "introduce_intermediate"],
+      "roles": ["owner", "reviewer"]
+    },
+    "audit": {
+      "log_all_changes": true,
+      "record_rationale": true,
+      "track_who_when": true
+    },
+    "state_transition": {
+      "after_fix": "draft",
+      "allowed_states": ["draft", "proposed", "approved", "in_progress", "completed"]
+    }
+  }
+}

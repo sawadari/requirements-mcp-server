@@ -1,0 +1,21 @@
+{
+  "autoValidation": {
+    "enabled": true,
+    "validation": {
+      "useLLM": false,
+      "updateMetrics": true
+    }
+  },
+  "autoFix": {
+    "enabled": true,
+    "mode": "strict",
+    "policyFile": "./src/fix-engine/fix-policy.jsonc",
+    "revalidateAfterFix": true,
+    "maxIterations": 3,
+    "fixSeverity": "error"
+  },
+  "logging": {
+    "enabled": true,
+    "verbose": false
+  }
+}

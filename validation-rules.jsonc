@@ -1,0 +1,248 @@
+{
+  // 要求検証ルール設定 (JSONC形式)
+  // バージョン: 1.0.0
+  "version": "1.0.0",
+
+  "rules": {
+    // ========== A. 階層ルール（Hierarchy Rules） ==========
+    "hierarchy": [
+      {
+        "id": "A1",
+        "domain": "hierarchy",
+        "name": "レベル間の関係制約",
+        "description": "stakeholder要求はsystem要求のみを子に持ち、system要求はsystem_functional要求のみを子に持つ",
+        "severity": "error",
+        "enabled": true,
+        "parameters": {
+          "allowedParentChildPairs": [
+            { "parent": "stakeholder", "child": "system" },
+            { "parent": "system", "child": "system_functional" }
+          ]
+        }
+      },
+      {
+        "id": "A2",
+        "domain": "hierarchy",
+        "name": "親要求の存在チェック",
+        "description": "system要求とsystem_functional要求は少なくとも1つの親要求（refines）を持つ必要がある",
+        "severity": "error",
+        "enabled": true,
+        "parameters": {
+          "requireParent": ["system", "system_functional"]
+        }
+      },
+      {
+        "id": "A3",
+        "domain": "hierarchy",
+        "name": "循環参照の禁止",
+        "description": "refinesエッジに循環参照があってはならない",
+        "severity": "error",
+        "enabled": true
+      },
+      {
+        "id": "A4",
+        "domain": "hierarchy",
+        "name": "最大階層深度",
+        "description": "要求の階層は3レベル（stakeholder → system → system_functional）を超えてはならない",
+        "severity": "warning",
+        "enabled": true,
+        "parameters": {
+          "maxDepth": 3
+        }
+      }
+    ],
+
+    // ========== B. グラフヘルス（Graph Health Rules） ==========
+    "graph_health": [
+      {
+        "id": "B1",
+        "domain": "graph_health",
+        "name": "DAG検証",
+        "description": "depends_onエッジとrefinesエッジを合わせたグラフは有向非巡回グラフ（DAG）でなければならない",
+        "severity": "error",
+        "enabled": true
+      },
+      {
+        "id": "B2",
+        "domain": "graph_health",
+        "name": "ファンアウト制限",
+        "description": "1つの要求が持つ子要求（refinesの逆方向）の数は上限を超えてはならない",
+        "severity": "warning",
+        "enabled": true,
+        "parameters": {
+          "maxChildren": 10
+        }
+      },
+      {
+        "id": "B3",
+        "domain": "graph_health",
+        "name": "孤立要求の検出",
+        "description": "依存関係やrefinesエッジを持たない孤立要求を検出（info）",
+        "severity": "info",
+        "enabled": true
+      },
+      {
+        "id": "B4",
+        "domain": "graph_health",
+        "name": "競合関係の整合性",
+        "description": "conflicts_withエッジは双方向対称でなければならない",
+        "severity": "warning",
+        "enabled": true
+      },
+      {
+        "id": "B5",
+        "domain": "graph_health",
+        "name": "重複候補の妥当性",
+        "description": "duplicatesエッジが指す要求は同じレベル（type）でなければならない",
+        "severity": "warning",
+        "enabled": true
+      }
+    ],
+
+    // ========== C. 抽象度ルール（Abstraction Rules） ==========
+    "abstraction": [
+      {
+        "id": "C1",
+        "domain": "abstraction",
+        "name": "兄弟要求の抽象度一貫性",
+        "description": "同じ親を持つ兄弟要求群の抽象度スコアの分散が閾値を超えてはならない",
+        "severity": "warning",
+        "enabled": true,
+        "parameters": {
+          "maxVariance": 0.15,
+          "useLLMForBoundary": true
+        }
+      },
+      {
+        "id": "C2",
+        "domain": "abstraction",
+        "name": "親子間の具体化度差",
+        "description": "子要求の抽象度は親要求より低い（より具体的）でなければならない",
+        "severity": "warning",
+        "enabled": true,
+        "parameters": {
+          "minDifference": 0.1,
+          "useLLMForBoundary": true
+        }
+      },
+      {
+        "id": "C3",
+        "domain": "abstraction",
+        "name": "抽象度スコアの範囲チェック",
+        "description": "抽象度スコアは0.0〜1.0の範囲内でなければならない",
+        "severity": "error",
+        "enabled": true
+      }
+    ],
+
+    // ========== D. MECEルール（MECE Rules） ==========
+    "mece": [
+      {
+        "id": "D1",
+        "domain": "mece",
+        "name": "兄弟要求間の重複検出",
+        "description": "同じ親を持つ兄弟要求間で意味的重複（類似度が閾値以上）を検出",
+        "severity": "warning",
+        "enabled": true,
+        "parameters": {
+          "similarityThreshold": 0.8,
+          "useEmbeddings": true,
+          "useLLMForBoundary": true
+        }
+      },
+      {
+        "id": "D2",
+        "domain": "mece",
+        "name": "親要求のカバレッジ",
+        "description": "親要求の内容が子要求群で十分にカバーされているか（LLM評価）",
+        "severity": "info",
+        "enabled": true,
+        "parameters": {
+          "requireLLM": true
+        }
+      },
+      {
+        "id": "D3",
+        "domain": "mece",
+        "name": "細分化の妥当性",
+        "description": "子要求が過度に細分化されていないかをチェック（子要求数とサイズのバランス）",
+        "severity": "info",
+        "enabled": true,
+        "parameters": {
+          "maxChildren": 10,
+          "minTokensPerChild": 20
+        }
+      }
+    ],
+
+    // ========== E. 品質スタイルルール（Quality & Style Rules） ==========
+    "quality_style": [
+      {
+        "id": "E1",
+        "domain": "quality_style",
+        "name": "曖昧な表現の検出",
+        "description": "「など」「適切に」「柔軟に」などの曖昧な表現を検出",
+        "severity": "warning",
+        "enabled": true,
+        "parameters": {
+          "vagueTerms": [
+            "など",
+            "等",
+            "適切に",
+            "柔軟に",
+            "必要に応じて",
+            "可能な限り",
+            "基本的に",
+            "一般的に"
+          ]
+        }
+      },
+      {
+        "id": "E2",
+        "domain": "quality_style",
+        "name": "受動態の検出",
+        "description": "受動態の使用を検出し、能動態への書き換えを推奨",
+        "severity": "info",
+        "enabled": true,
+        "parameters": {
+          "passivePatterns": ["される", "れる", "られる"]
+        }
+      },
+      {
+        "id": "E3",
+        "domain": "quality_style",
+        "name": "主語の明示",
+        "description": "要求の主語（誰が/何が）が明示されているかチェック",
+        "severity": "warning",
+        "enabled": true,
+        "parameters": {
+          "requireActor": true,
+          "useLLM": true
+        }
+      },
+      {
+        "id": "E4",
+        "domain": "quality_style",
+        "name": "長さの妥当性",
+        "description": "要求の説明が短すぎる、または長すぎないかチェック",
+        "severity": "info",
+        "enabled": true,
+        "parameters": {
+          "minTokens": 10,
+          "maxTokens": 200
+        }
+      },
+      {
+        "id": "E5",
+        "domain": "quality_style",
+        "name": "単一性チェック",
+        "description": "1つの要求が複数の関心事を含んでいないかチェック（atomicity_score使用）",
+        "severity": "warning",
+        "enabled": true,
+        "parameters": {
+          "minAtomicityScore": 0.7
+        }
+      }
+    ]
+  }
+}
