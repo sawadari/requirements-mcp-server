@@ -131,15 +131,18 @@ app.get('/', (req, res) => {
       top: 0;
       left: 0;
       right: 0;
-      height: 6px;
+      height: 8px;
       cursor: ns-resize;
-      background: transparent;
+      background: var(--border);
       z-index: 10;
+      border-top: 2px solid var(--border);
+      border-bottom: 2px solid var(--border);
     }
 
     .search-resizer:hover {
       background: var(--primary);
-      opacity: 0.5;
+      border-color: var(--primary);
+      opacity: 0.8;
     }
 
     .search-content {
@@ -413,77 +416,84 @@ app.get('/', (req, res) => {
     }
 
     .detail-header {
-      padding: 20px 32px;
+      padding: 12px 16px;
       background: var(--surface);
       border-bottom: 1px solid var(--border);
     }
 
     .detail-header h2 {
-      font-size: 24px;
+      font-size: 20px;
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
 
     .detail-meta {
       display: flex;
-      gap: 16px;
-      font-size: 13px;
+      gap: 12px;
+      font-size: 12px;
       color: var(--text-secondary);
     }
 
     .detail-body {
       flex: 1;
       overflow-y: auto;
-      padding: 32px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 16px;
     }
 
-    .detail-column-left {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+    .detail-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: start;
     }
 
+    .detail-column-left,
     .detail-column-right {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      position: sticky;
-      top: 0;
+      gap: 8px;
     }
 
     .detail-section {
       background: var(--surface);
-      padding: 12px;
-      border-radius: 12px;
+      padding: 10px;
+      border-radius: 8px;
       margin-top: 0;
     }
 
     .detail-section h3 {
-      font-size: 18px;
-      margin-bottom: 8px;
+      font-size: 15px;
+      margin-bottom: 6px;
       margin-top: 0;
       color: var(--text);
     }
 
+    .relations-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
     .detail-field {
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .detail-field-label {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       color: var(--text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     .detail-field-value {
-      font-size: 14px;
+      font-size: 13px;
       color: var(--text);
+      line-height: 1.4;
     }
 
     .badge {
@@ -892,28 +902,9 @@ app.get('/', (req, res) => {
         <!-- 左側: ツリーパネル -->
         <div class="tree-panel" id="treePanel">
         <div class="panel-header">
-          <h1>🌳 要求ツリー</h1>
-          <p>階層構造で要求を表示</p>
-          <p id="version-display" style="font-size: 11px; opacity: 0.7; margin-top: 8px;"></p>
+          <h1>🌳 Items</h1>
         </div>
       <div class="tree-content">
-        <div class="legend">
-          <div class="legend-title">凡例</div>
-          <div class="legend-items">
-            <div class="legend-item">
-              <div class="legend-color stakeholder"></div>
-              <span>👥 ステークホルダ要求</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-color system"></div>
-              <span>⚙️ システム要求</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-color functional"></div>
-              <span>🔧 システム機能要求</span>
-            </div>
-          </div>
-        </div>
         <div id="treeContainer"></div>
       </div>
     </div>
@@ -933,10 +924,6 @@ app.get('/', (req, res) => {
           <!-- Search Panel - 詳細ビューの下に配置 -->
           <div class="search-panel" id="searchPanel">
         <div class="search-resizer" id="searchResizer"></div>
-        <div class="panel-header">
-          <h1>🔍 Search & Filter</h1>
-          <p>要求を検索・フィルタリング</p>
-        </div>
         <div class="search-content">
           <div class="search-filters">
             <input type="text" id="searchKeyword" placeholder="キーワード検索..." />
@@ -986,7 +973,7 @@ app.get('/', (req, res) => {
     <div class="chat-panel" id="chatPanel">
       <div class="chat-resizer" id="chatResizer"></div>
       <div class="chat-header">
-        <h2>💬 Claude Assistant</h2>
+        <h2>💬 Chat</h2>
       </div>
       <div class="chat-messages" id="chatMessages">
         <div class="chat-message">
@@ -1022,9 +1009,6 @@ app.get('/', (req, res) => {
   <script>
     let selectedRequirement = null;
     let allRequirements = []; // Store all requirements for search
-
-    // バージョン表示を更新
-    document.getElementById('version-display').textContent = 'v' + Date.now();
 
     // View switching functionality
     document.querySelectorAll('.nav-item').forEach(item => {
@@ -1206,15 +1190,26 @@ app.get('/', (req, res) => {
                              (col.dependencies && col.dependencies.includes(row.id)) ||
                              row.parentId === col.id || col.parentId === row.id;
 
-          const cellStyle = hasRelation ? 'background: var(--primary); opacity: 0.3;' : '';
+          const cellStyle = hasRelation ? 'background: var(--primary); opacity: 0.3; cursor: pointer;' : '';
           const cellContent = hasRelation ? '●' : '';
-          html += '<td style="border: 1px solid var(--border); padding: 8px; text-align: center; ' + cellStyle + '">' + cellContent + '</td>';
+          const dataAttr = hasRelation ? \`data-row-id="$\{row.id}" data-col-id="$\{col.id}" class="matrix-cell"\` : '';
+          html += '<td style="border: 1px solid var(--border); padding: 8px; text-align: center; ' + cellStyle + '" ' + dataAttr + '>' + cellContent + '</td>';
         });
         html += '</tr>';
       });
 
       html += '</tbody></table></div>';
       container.innerHTML = html;
+
+      // マトリックスセルにクリックイベントを追加
+      document.querySelectorAll('.matrix-cell').forEach(cell => {
+        cell.addEventListener('click', async () => {
+          const colId = cell.dataset.colId;
+          if (colId) {
+            await loadAndSelectRequirement(colId);
+          }
+        });
+      });
     }
 
     // ビュー設定を読み込んでビュー選択リストを生成
@@ -1279,9 +1274,9 @@ app.get('/', (req, res) => {
 
       // 要求を種類別にグループ化（重複チェック付き）
       const groups = {
-        stakeholder: { name: 'ステークホルダ要求', icon: '●', color: 'stakeholder', items: [], ids: new Set() },
-        system: { name: 'システム要求', icon: '■', color: 'system', items: [], ids: new Set() },
-        functional: { name: 'システム機能要求', icon: '▲', color: 'functional', items: [], ids: new Set() }
+        stakeholder: { name: 'ステークホルダ要求', icon: '', color: 'stakeholder', items: [], ids: new Set() },
+        system: { name: 'システム要求', icon: '', color: 'system', items: [], ids: new Set() },
+        functional: { name: 'システム機能要求', icon: '', color: 'functional', items: [], ids: new Set() }
       };
 
       tree.forEach(node => {
@@ -1413,12 +1408,7 @@ app.get('/', (req, res) => {
                         type === 'system' ? 'システム要求' : 'システム機能要求';
 
       header.innerHTML = \`
-        <h2>\${req.title}</h2>
-        <div class="detail-meta">
-          <span>\${req.id}</span>
-          <span>作成: \${new Date(req.createdAt).toLocaleDateString('ja-JP')}</span>
-          <span>更新: \${new Date(req.updatedAt).toLocaleDateString('ja-JP')}</span>
-        </div>
+        <h2>\${req.id}　\${req.title}</h2>
       \`;
 
       // 上位・下位要求を取得
@@ -1471,62 +1461,78 @@ app.get('/', (req, res) => {
       \` : '';
 
       body.innerHTML = \`
-        <div class="detail-column-left">
-          <div class="detail-section">
-            <h3>説明</h3>
-            <div class="detail-field-value">$\{req.description}</div>
-          </div>
+        <div class="detail-columns">
+          <div class="detail-column-left">
+            <div class="detail-section">
+              <h3>説明</h3>
+              <div class="detail-field-value">$\{req.description}</div>
+            </div>
 
-          $\{req.rationale ? \`
-          <div class="detail-section">
-            <h3>理由</h3>
-            <div class="detail-field-value">$\{req.rationale}</div>
-          </div>
-          \` : ''}
-
-          <div class="detail-section">
-            <h3>基本情報</h3>
-            <div class="detail-field">
-              <div class="detail-field-label">カテゴリ</div>
-              <div class="detail-field-value">$\{req.category}</div>
-            </div>
-            <div class="detail-field">
-              <div class="detail-field-label">優先度</div>
-              <div class="detail-field-value">
-                <span class="badge badge-priority-$\{req.priority}">$\{req.priority.toUpperCase()}</span>
-              </div>
-            </div>
-            <div class="detail-field">
-              <div class="detail-field-label">ステータス</div>
-              <div class="detail-field-value">
-                <span class="badge badge-status">$\{req.status}</span>
-              </div>
-            </div>
-            $\{req.author ? \`
-            <div class="detail-field">
-              <div class="detail-field-label">作成者</div>
-              <div class="detail-field-value">$\{req.author}</div>
+            $\{req.rationale ? \`
+            <div class="detail-section">
+              <h3>理由</h3>
+              <div class="detail-field-value">$\{req.rationale}</div>
             </div>
             \` : ''}
-            $\{req.assignee ? \`
-            <div class="detail-field">
-              <div class="detail-field-label">担当者</div>
-              <div class="detail-field-value">$\{req.assignee}</div>
+
+            <div class="detail-section">
+              <h3>基本情報</h3>
+              <div class="detail-field">
+                <div class="detail-field-label">作成日</div>
+                <div class="detail-field-value">$\{new Date(req.createdAt).toLocaleDateString('ja-JP')}</div>
+              </div>
+              <div class="detail-field">
+                <div class="detail-field-label">更新日</div>
+                <div class="detail-field-value">$\{new Date(req.updatedAt).toLocaleDateString('ja-JP')}</div>
+              </div>
+              <div class="detail-field">
+                <div class="detail-field-label">カテゴリ</div>
+                <div class="detail-field-value">$\{req.category}</div>
+              </div>
+              <div class="detail-field">
+                <div class="detail-field-label">優先度</div>
+                <div class="detail-field-value">
+                  <span class="badge badge-priority-$\{req.priority}">$\{req.priority.toUpperCase()}</span>
+                </div>
+              </div>
+              <div class="detail-field">
+                <div class="detail-field-label">ステータス</div>
+                <div class="detail-field-value">
+                  <span class="badge badge-status">$\{req.status}</span>
+                </div>
+              </div>
+              $\{req.author ? \`
+              <div class="detail-field">
+                <div class="detail-field-label">作成者</div>
+                <div class="detail-field-value">$\{req.author}</div>
+              </div>
+              \` : ''}
+              $\{req.assignee ? \`
+              <div class="detail-field">
+                <div class="detail-field-label">担当者</div>
+                <div class="detail-field-value">$\{req.assignee}</div>
+              </div>
+              \` : ''}
+            </div>
+
+            $\{req.tags && req.tags.length > 0 ? \`
+            <div class="detail-section">
+              <h3>タグ</h3>
+              <div class="tag-list">
+                $\{req.tags.map(tag => \`<span class="tag">$\{tag}</span>\`).join('')}
+              </div>
             </div>
             \` : ''}
           </div>
 
-          $\{req.tags && req.tags.length > 0 ? \`
-          <div class="detail-section">
-            <h3>タグ</h3>
-            <div class="tag-list">
-              $\{req.tags.map(tag => \`<span class="tag">$\{tag}</span>\`).join('')}
+          <div class="detail-column-right">
+            $\{(parentsHtml || childrenHtml) ? \`
+            <div class="relations-grid">
+              $\{parentsHtml || '<div></div>'}
+              $\{childrenHtml || '<div></div>'}
             </div>
+            \` : ''}
           </div>
-          \` : ''}
-
-          $\{parentsHtml}
-          $\{childrenHtml}
         </div>
       \`;
 
