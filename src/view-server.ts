@@ -1023,6 +1023,37 @@ app.get('/', (req, res) => {
     let selectedRequirement = null;
     let allRequirements = []; // Store all requirements for search
 
+    const STATUS_LABELS = {
+      draft: 'ドラフト',
+      proposed: '提案中',
+      approved: '承認済み',
+      in_progress: '進行中',
+      review: 'レビュー中',
+      completed: '完了',
+      pending: '保留',
+      rejected: '却下',
+      deprecated: '廃止'
+    };
+
+    const PRIORITY_LABELS = {
+      critical: 'クリティカル',
+      high: '高',
+      medium: '中',
+      low: '低'
+    };
+
+    function formatStatus(status) {
+      if (!status) return '';
+      const key = status.toLowerCase();
+      return STATUS_LABELS[key] || status;
+    }
+
+    function formatPriority(priority) {
+      if (!priority) return '';
+      const key = priority.toLowerCase();
+      return PRIORITY_LABELS[key] || priority;
+    }
+
     // バージョン表示を更新
     document.getElementById('version-display').textContent = 'v' + Date.now();
 
@@ -1441,8 +1472,8 @@ app.get('/', (req, res) => {
                 <div class="relation-link-id">$\{parent.id}</div>
                 <div class="relation-link-title">$\{parent.title}</div>
                 <div class="relation-link-meta">
-                  <span class="relation-link-badge">$\{parent.status}</span>
-                  <span class="relation-link-badge">$\{parent.priority}</span>
+                  <span class="relation-link-badge">$\{formatStatus(parent.status)}</span>
+                  <span class="relation-link-badge">$\{formatPriority(parent.priority)}</span>
                 </div>
               </div>
             </div>
@@ -1461,8 +1492,8 @@ app.get('/', (req, res) => {
                 <div class="relation-link-id">$\{child.id}</div>
                 <div class="relation-link-title">$\{child.title}</div>
                 <div class="relation-link-meta">
-                  <span class="relation-link-badge">$\{child.status}</span>
-                  <span class="relation-link-badge">$\{child.priority}</span>
+                  <span class="relation-link-badge">$\{formatStatus(child.status)}</span>
+                  <span class="relation-link-badge">$\{formatPriority(child.priority)}</span>
                 </div>
               </div>
             </div>
@@ -1493,13 +1524,13 @@ app.get('/', (req, res) => {
             <div class="detail-field">
               <div class="detail-field-label">優先度</div>
               <div class="detail-field-value">
-                <span class="badge badge-priority-$\{req.priority}">$\{req.priority.toUpperCase()}</span>
+                <span class="badge badge-priority-$\{req.priority}">$\{formatPriority(req.priority)}</span>
               </div>
             </div>
             <div class="detail-field">
               <div class="detail-field-label">ステータス</div>
               <div class="detail-field-value">
-                <span class="badge badge-status">$\{req.status}</span>
+                <span class="badge badge-status">$\{formatStatus(req.status)}</span>
               </div>
             </div>
             $\{req.author ? \`
