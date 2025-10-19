@@ -363,10 +363,14 @@ export class RequirementValidator {
     return results;
   }
 
-  // ヘルパーメソッド: 要求の種類を推測
-  private inferType(requirement: Requirement): RequirementType {
+  // ヘルパーメソッド: 要求の種類を推測（system_functionalはfunctionalに正規化）
+  private inferType(requirement: Requirement): 'stakeholder' | 'system' | 'functional' {
     if (requirement.type) {
-      return requirement.type;
+      // system_functionalをfunctionalに正規化
+      if (requirement.type === 'system_functional') return 'functional';
+      if (requirement.type === 'functional') return 'functional';
+      if (requirement.type === 'system') return 'system';
+      if (requirement.type === 'stakeholder') return 'stakeholder';
     }
 
     // カテゴリから推測

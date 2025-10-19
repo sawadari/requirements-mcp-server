@@ -48,9 +48,10 @@ export type RequirementPriority =
   | 'low';      // P3: 低
 
 export type RequirementType =
-  | 'stakeholder'  // ステークホルダ要求
-  | 'system'       // システム要求
-  | 'functional';  // システム機能要求
+  | 'stakeholder'       // ステークホルダ要求
+  | 'system'            // システム要求
+  | 'functional'        // システム機能要求
+  | 'system_functional'; // システム機能要求（別名）
 
 export interface ImpactAnalysis {
   requirementId: string;

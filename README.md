@@ -31,6 +31,10 @@ requirements-mcp-serverは、Model Context Protocol (MCP)を使用した要求�
   - リサイズ可能なパネル、カスタムビュー設定
 - **バリデーション**: 要求データの整合性チェック
   - 必須フィールド、依存関係、循環参照の検証
+- **自動検証・修正**: 要求変更時の自動品質チェックと修正
+  - 要求追加・更新時に自動的に妥当性を評価
+  - 設定可能な自動修正エンジン（Strict/Suggestモード）
+  - 品質スコアリングと違反レポート
 
 ## インストール
 
@@ -281,18 +285,88 @@ Claude: 変更提案を作成します。
   - スケジュールへの影響が予想されます
 ```
 
+## 自動検証・修正機能
+
+requirements-mcp-serverは、要求変更時に自動的に妥当性を評価し、必要に応じて修正を適用する機能を搭載しています。
+
+### 設定ファイル
+
+設定は `src/auto-validation-config.jsonc` で管理されます:
+
+```jsonc
+{
+  "autoValidation": {
+    "enabled": true,           // 自動検証を有効化
+    "validation": {
+      "useLLM": false,         // LLM評価を使用するか
+      "updateMetrics": true    // NLP指標を更新するか
+    }
+  },
+  "autoFix": {
+    "enabled": true,           // 自動修正を有効化
+    "mode": "strict",          // 修正モード: "strict" | "suggest" | "disabled"
+    "policyFile": "./src/fix-engine/fix-policy.jsonc",
+    "revalidateAfterFix": true,  // 修正後に再検証を実行
+    "maxIterations": 3,          // 最大修正反復回数
+    "fixSeverity": "error"       // 修正対象: "error" | "warning" | "info"
+  },
+  "logging": {
+    "enabled": true,           // ログを記録
+    "verbose": false           // 詳細ログ
+  }
+}
+```
+
+### 動作フロー
+
+1. **要求の追加・更新**
+   - `addRequirement()` または `updateRequirement()` が呼ばれる
+
+2. **自動検証**
+   - ValidationEngineが要求を検証
+   - 階層構造、グラフヘルス、抽象度、MECE、品質スタイルをチェック
+
+3. **自動修正**（違反がある場合）
+   - FixExecutorが修正プランを生成
+   - 設定に応じて自動適用（Strictモード）または提案のみ（Suggestモード）
+
+4. **再検証**
+   - 修正後の要求を再検証
+   - 最終的な品質スコアを計算
+
+### テスト
+
+自動検証・修正機能のテストスクリプト:
+
+```bash
+npx tsx scripts/test-auto-validation.ts
+```
+
+### カスタマイズ
+
+修正ポリシーは `src/fix-engine/fix-policy.jsonc` でカスタマイズ可能です。詳細は[Fix Engineドキュメント](./docs/fix-engine.md)を参照してください。
+
 ## プロジェクト構造
 
 ```
 requirements-mcp-server/
 ├── src/
-│   ├── index.ts          # MCPサーバーのメインエントリーポイント
-│   ├── types.ts          # 型定義
-│   ├── storage.ts        # データストレージ層
-│   └── analyzer.ts       # 影響範囲分析ロジック
-├── data/                 # 要求データ（自動生成）
-│   ├── requirements.json # 要求データ
-│   └── proposals.json    # 変更提案データ
+│   ├── index.ts                    # MCPサーバーのメインエントリーポイント
+│   ├── types.ts                    # 型定義
+│   ├── storage.ts                  # データストレージ層（自動検証統合）
+│   ├── analyzer.ts                 # 影響範囲分析ロジック
+│   ├── validation-service.ts       # 自動検証・修正サービス
+│   ├── auto-validation-config.jsonc # 自動検証設定
+│   ├── validation/                 # 検証エンジン
+│   └── fix-engine/                 # 修正エンジン
+│       ├── types.ts                # 修正エンジン型定義
+│       ├── fix-planner.ts          # 修正プラン生成
+│       ├── fix-executor.ts         # 修正実行
+│       ├── change-engine.ts        # 変更適用
+│       └── fix-policy.jsonc        # 修正ポリシー
+├── data/                           # 要求データ（自動生成）
+│   ├── requirements.json           # 要求データ
+│   └── proposals.json              # 変更提案データ
 ├── build/                # ビルド出力（自動生成）
 ├── package.json
 ├── tsconfig.json

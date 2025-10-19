@@ -1,46 +1,4 @@
-/**
- * View Server - ブラウザでビューを表示するWebサーバー
- */
 
-import express from 'express';
-import cors from 'cors';
-import path from 'path';
-import fs from 'fs/promises';
-import chokidar from 'chokidar';
-import { marked } from 'marked';
-import { OperationLogger } from './operation-logger.js';
-import { RequirementsStorage } from './storage.js';
-import { TreeBuilder } from './tree-view.js';
-import { RequirementValidator } from './validator.js';
-
-const app = express();
-const PORT = 5002;
-const storage = new RequirementsStorage('./data');
-const validator = new RequirementValidator(storage);
-
-// CORS有効化
-app.use(cors());
-app.use(express.json());
-
-// 静的ファイル提供
-app.use('/views', express.static(path.join(process.cwd(), 'views')));
-
-// ビュー定義
-const VIEWS = [
-  { id: 'stakeholder-requirements', name: 'ステークホルダ要求リスト', icon: '👥' },
-  { id: 'system-requirements', name: 'システム要求リスト', icon: '⚙️' },
-  { id: 'system-functional-requirements', name: 'システム機能要求リスト', icon: '🔧' },
-  { id: 'all-requirements', name: '全要求一覧', icon: '📋' },
-  { id: 'stakeholder-system-matrix', name: 'ステークホルダ-システム要求マトリックス', icon: '📊' },
-  { id: 'system-functional-matrix', name: 'システム-機能要求マトリックス', icon: '📈' },
-  { id: 'critical-requirements', name: '重要度Critical要求', icon: '🚨' },
-  { id: 'in-progress-requirements', name: '実装中要求', icon: '🔄' },
-  { id: 'operation-logs', name: '操作履歴（デバッグ）', icon: '🔍' },
-];
-
-// メインページ（ツリービュー）
-app.get('/', (req, res) => {
-  const html = `
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -1174,7 +1132,7 @@ app.get('/', (req, res) => {
 
       // マトリックステーブルを作成
       let html = '<div style="overflow: auto; max-height: 100%;"><table style="border-collapse: collapse; font-size: 12px; width: 100%;">';
-      html += '<thead><tr><th style="border: 1px solid var(--border); padding: 8px; background: var(--surface); position: sticky; top: 0; left: 0; z-index: 3;">' + rowName + ' \\ ' + colName + '</th>';
+      html += '<thead><tr><th style="border: 1px solid var(--border); padding: 8px; background: var(--surface); position: sticky; top: 0; left: 0; z-index: 3;">' + rowName + ' \ ' + colName + '</th>';
 
       cols.forEach(col => {
         html += '<th style="border: 1px solid var(--border); padding: 8px; background: var(--surface); min-width: 100px; position: sticky; top: 0; z-index: 2;">' + col.id + '<br><span style="font-weight: normal; font-size: 11px;">' + col.title.substring(0, 20) + '</span></th>';
@@ -1185,16 +1143,14 @@ app.get('/', (req, res) => {
         html += '<tr><td style="border: 1px solid var(--border); padding: 8px; background: var(--surface); font-weight: bold; position: sticky; left: 0; z-index: 1;">' + row.id + '<br><span style="font-weight: normal; font-size: 11px;">' + row.title.substring(0, 30) + '</span></td>';
 
         cols.forEach(col => {
-          // 依存関係・refines関係をチェック
+          // 依存関係をチェック
           const hasRelation = (row.dependencies && row.dependencies.includes(col.id)) ||
                              (col.dependencies && col.dependencies.includes(row.id)) ||
-                             (row.refines && row.refines.includes(col.id)) ||
-                             (col.refines && col.refines.includes(row.id)) ||
                              row.parentId === col.id || col.parentId === row.id;
 
           const cellStyle = hasRelation ? 'background: var(--primary); opacity: 0.3; cursor: pointer;' : '';
           const cellContent = hasRelation ? '●' : '';
-          const dataAttr = hasRelation ? \`data-row-id="$\{row.id}" data-col-id="$\{col.id}" class="matrix-cell"\` : '';
+          const dataAttr = hasRelation ? `data-row-id="${row.id}" data-col-id="${col.id}" class="matrix-cell"` : '';
           html += '<td style="border: 1px solid var(--border); padding: 8px; text-align: center; ' + cellStyle + '" ' + dataAttr + '>' + cellContent + '</td>';
         });
         html += '</tr>';
@@ -1285,13 +1241,8 @@ app.get('/', (req, res) => {
         const req = node.requirement;
         console.log('処理中の要求:', req.id, req.title);
 
-        // typeフィールドの正規化: system_functional -> functional
-        let type = req.type;
-        if (type === 'system_functional') {
-          type = 'functional';
-        }
-
         // typeフィールドがない場合、categoryやIDから推測
+        let type = req.type;
         if (!type) {
           if (req.id && req.id.startsWith('STK-')) {
             type = 'stakeholder';
@@ -1334,11 +1285,11 @@ app.get('/', (req, res) => {
         // グループヘッダー
         const groupHeader = document.createElement('div');
         groupHeader.className = 'tree-group-header';
-        groupHeader.innerHTML = \`
+        groupHeader.innerHTML = `
           <span class="tree-group-icon">▶</span>
-          <span class="tree-group-title">\${group.icon} \${group.name}</span>
-          <span class="tree-group-count">(\${group.items.length})</span>
-        \`;
+          <span class="tree-group-title">${group.icon} ${group.name}</span>
+          <span class="tree-group-count">(${group.items.length})</span>
+        `;
 
         const groupContent = document.createElement('div');
         groupContent.className = 'tree-group-content';
@@ -1347,14 +1298,14 @@ app.get('/', (req, res) => {
         // グループ内のアイテム
         group.items.forEach(req => {
           const item = document.createElement('div');
-          item.className = \`tree-item \${typeKey}\`;
+          item.className = `tree-item ${typeKey}`;
           item.dataset.id = req.id;
 
-          item.innerHTML = \`
-            <span class="tree-item-icon">\${group.icon}</span>
-            <span class="tree-item-title">\${req.title}</span>
-            <span class="tree-item-id">\${req.id}</span>
-          \`;
+          item.innerHTML = `
+            <span class="tree-item-icon">${group.icon}</span>
+            <span class="tree-item-title">${req.title}</span>
+            <span class="tree-item-id">${req.id}</span>
+          `;
 
           item.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1412,137 +1363,136 @@ app.get('/', (req, res) => {
 
       const type = req.type || 'stakeholder';
       const typeLabel = type === 'stakeholder' ? 'ステークホルダ要求' :
-                        type === 'system' ? 'システム要求' :
-                        (type === 'system_functional' || type === 'functional') ? 'システム機能要求' : 'システム機能要求';
+                        type === 'system' ? 'システム要求' : 'システム機能要求';
 
-      header.innerHTML = \`
-        <h2>\${req.id}　\${req.title}</h2>
-      \`;
+      header.innerHTML = `
+        <h2>${req.id}　${req.title}</h2>
+      `;
 
       // 上位・下位要求を取得
       let relations = { parents: [], children: [] };
       try {
-        const relResponse = await fetch(\`/api/requirement/\${req.id}/relations\`);
+        const relResponse = await fetch(`/api/requirement/${req.id}/relations`);
         relations = await relResponse.json();
       } catch (error) {
         console.error('関連要求の取得に失敗:', error);
       }
 
       // 上位要求のHTML生成
-      const parentsHtml = relations.parents.length > 0 ? \`
+      const parentsHtml = relations.parents.length > 0 ? `
         <div class="detail-section">
           <h3>▲ 上位要求</h3>
-          $\{relations.parents.map(parent => \`
-            <div class="relation-link" data-req-id="$\{parent.id}">
-              <span class="relation-link-icon">$\{getTypeIcon(parent.type || parent.category)}</span>
+          ${relations.parents.map(parent => `
+            <div class="relation-link" data-req-id="${parent.id}">
+              <span class="relation-link-icon">${getTypeIcon(parent.type || parent.category)}</span>
               <div class="relation-link-content">
-                <div class="relation-link-id">$\{parent.id}</div>
-                <div class="relation-link-title">$\{parent.title}</div>
+                <div class="relation-link-id">${parent.id}</div>
+                <div class="relation-link-title">${parent.title}</div>
                 <div class="relation-link-meta">
-                  <span class="relation-link-badge">$\{parent.status}</span>
-                  <span class="relation-link-badge">$\{parent.priority}</span>
+                  <span class="relation-link-badge">${parent.status}</span>
+                  <span class="relation-link-badge">${parent.priority}</span>
                 </div>
               </div>
             </div>
-          \`).join('')}
+          `).join('')}
         </div>
-      \` : '';
+      ` : '';
 
       // 下位要求のHTML生成
-      const childrenHtml = relations.children.length > 0 ? \`
+      const childrenHtml = relations.children.length > 0 ? `
         <div class="detail-section">
           <h3>▼ 下位要求</h3>
-          $\{relations.children.map(child => \`
-            <div class="relation-link" data-req-id="$\{child.id}">
-              <span class="relation-link-icon">$\{getTypeIcon(child.type || child.category)}</span>
+          ${relations.children.map(child => `
+            <div class="relation-link" data-req-id="${child.id}">
+              <span class="relation-link-icon">${getTypeIcon(child.type || child.category)}</span>
               <div class="relation-link-content">
-                <div class="relation-link-id">$\{child.id}</div>
-                <div class="relation-link-title">$\{child.title}</div>
+                <div class="relation-link-id">${child.id}</div>
+                <div class="relation-link-title">${child.title}</div>
                 <div class="relation-link-meta">
-                  <span class="relation-link-badge">$\{child.status}</span>
-                  <span class="relation-link-badge">$\{child.priority}</span>
+                  <span class="relation-link-badge">${child.status}</span>
+                  <span class="relation-link-badge">${child.priority}</span>
                 </div>
               </div>
             </div>
-          \`).join('')}
+          `).join('')}
         </div>
-      \` : '';
+      ` : '';
 
-      body.innerHTML = \`
+      body.innerHTML = `
         <div class="detail-columns">
           <div class="detail-column-left">
             <div class="detail-section">
               <h3>説明</h3>
-              <div class="detail-field-value">$\{req.description}</div>
+              <div class="detail-field-value">${req.description}</div>
             </div>
 
-            $\{req.rationale ? \`
+            ${req.rationale ? `
             <div class="detail-section">
               <h3>理由</h3>
-              <div class="detail-field-value">$\{req.rationale}</div>
+              <div class="detail-field-value">${req.rationale}</div>
             </div>
-            \` : ''}
+            ` : ''}
 
             <div class="detail-section">
               <h3>基本情報</h3>
               <div class="detail-field">
                 <div class="detail-field-label">作成日</div>
-                <div class="detail-field-value">$\{new Date(req.createdAt).toLocaleDateString('ja-JP')}</div>
+                <div class="detail-field-value">${new Date(req.createdAt).toLocaleDateString('ja-JP')}</div>
               </div>
               <div class="detail-field">
                 <div class="detail-field-label">更新日</div>
-                <div class="detail-field-value">$\{new Date(req.updatedAt).toLocaleDateString('ja-JP')}</div>
+                <div class="detail-field-value">${new Date(req.updatedAt).toLocaleDateString('ja-JP')}</div>
               </div>
               <div class="detail-field">
                 <div class="detail-field-label">カテゴリ</div>
-                <div class="detail-field-value">$\{req.category}</div>
+                <div class="detail-field-value">${req.category}</div>
               </div>
               <div class="detail-field">
                 <div class="detail-field-label">優先度</div>
                 <div class="detail-field-value">
-                  <span class="badge badge-priority-$\{req.priority}">$\{req.priority.toUpperCase()}</span>
+                  <span class="badge badge-priority-${req.priority}">${req.priority.toUpperCase()}</span>
                 </div>
               </div>
               <div class="detail-field">
                 <div class="detail-field-label">ステータス</div>
                 <div class="detail-field-value">
-                  <span class="badge badge-status">$\{req.status}</span>
+                  <span class="badge badge-status">${req.status}</span>
                 </div>
               </div>
-              $\{req.author ? \`
+              ${req.author ? `
               <div class="detail-field">
                 <div class="detail-field-label">作成者</div>
-                <div class="detail-field-value">$\{req.author}</div>
+                <div class="detail-field-value">${req.author}</div>
               </div>
-              \` : ''}
-              $\{req.assignee ? \`
+              ` : ''}
+              ${req.assignee ? `
               <div class="detail-field">
                 <div class="detail-field-label">担当者</div>
-                <div class="detail-field-value">$\{req.assignee}</div>
+                <div class="detail-field-value">${req.assignee}</div>
               </div>
-              \` : ''}
+              ` : ''}
             </div>
 
-            $\{req.tags && req.tags.length > 0 ? \`
+            ${req.tags && req.tags.length > 0 ? `
             <div class="detail-section">
               <h3>タグ</h3>
               <div class="tag-list">
-                $\{req.tags.map(tag => \`<span class="tag">$\{tag}</span>\`).join('')}
+                ${req.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
               </div>
             </div>
-            \` : ''}
+            ` : ''}
           </div>
 
           <div class="detail-column-right">
-            $\{(parentsHtml || childrenHtml) ? \`
+            ${(parentsHtml || childrenHtml) ? `
             <div class="relations-grid">
-              $\{parentsHtml || '<div></div>'}
-              $\{childrenHtml || '<div></div>'}
+              ${parentsHtml || '<div></div>'}
+              ${childrenHtml || '<div></div>'}
             </div>
-            \` : ''}
+            ` : ''}
           </div>
         </div>
-      \`;
+      `;
 
       // 関連要求リンクにクリックイベントを追加
       document.querySelectorAll('.relation-link').forEach(link => {
@@ -1559,7 +1509,7 @@ app.get('/', (req, res) => {
         return '●';
       } else if (type === 'system' || (type && type.includes('システム要求'))) {
         return '■';
-      } else if (type === 'functional' || type === 'system_functional' || (type && type.includes('機能'))) {
+      } else if (type === 'functional' || (type && type.includes('機能'))) {
         return '▲';
       }
       return '○';
@@ -1695,7 +1645,7 @@ app.get('/', (req, res) => {
       const typingDiv = document.createElement('div');
       typingDiv.className = 'chat-message';
       typingDiv.id = 'typing-indicator';
-      typingDiv.innerHTML = \`
+      typingDiv.innerHTML = `
         <div class="message-avatar">C</div>
         <div class="message-content">
           <div class="typing-indicator">
@@ -1704,7 +1654,7 @@ app.get('/', (req, res) => {
             <div class="typing-dot"></div>
           </div>
         </div>
-      \`;
+      `;
       chatMessages.appendChild(typingDiv);
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
@@ -1869,898 +1819,4 @@ app.get('/', (req, res) => {
   </script>
 </body>
 </html>
-  `;
-
-  res.send(html);
-});
-
-// 旧UIページ（削除予定）
-app.get('/old', (req, res) => {
-  const html = `
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>要求管理ビューアー</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    :root {
-      --primary: #3b82f6;
-      --primary-dark: #2563eb;
-      --secondary: #8b5cf6;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --bg: #0f172a;
-      --surface: #1e293b;
-      --surface-light: #334155;
-      --text: #f1f5f9;
-      --text-secondary: #cbd5e1;
-      --border: #475569;
-    }
-
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-    }
-
-    .container {
-      display: flex;
-      height: 100vh;
-    }
-
-    /* サイドバー */
-    .sidebar {
-      width: 320px;
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .sidebar-header {
-      padding: 24px;
-      border-bottom: 1px solid var(--border);
-      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-    }
-
-    .sidebar-header h1 {
-      font-size: 20px;
-      font-weight: 700;
-      margin-bottom: 8px;
-      color: white;
-    }
-
-    .sidebar-header p {
-      font-size: 14px;
-      color: rgba(255, 255, 255, 0.8);
-    }
-
-    .view-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-    }
-
-    .view-button {
-      width: 100%;
-      padding: 14px 16px;
-      margin-bottom: 8px;
-      background: var(--surface-light);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 14px;
-      text-align: left;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .view-button:hover {
-      background: var(--primary);
-      border-color: var(--primary);
-      transform: translateX(4px);
-    }
-
-    .view-button.active {
-      background: var(--primary);
-      border-color: var(--primary);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-    }
-
-    .view-button .icon {
-      font-size: 20px;
-      flex-shrink: 0;
-    }
-
-    .view-button .name {
-      flex: 1;
-      font-weight: 500;
-    }
-
-    /* メインコンテンツ */
-    .main-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .content-header {
-      padding: 20px 32px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .content-header h2 {
-      font-size: 24px;
-      font-weight: 600;
-    }
-
-    .refresh-indicator {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      background: var(--success);
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 500;
-      color: white;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    .refresh-indicator.show {
-      opacity: 1;
-    }
-
-    .content-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 32px;
-    }
-
-    /* Markdown styling */
-    .markdown-content {
-      max-width: 1200px;
-      margin: 0 auto;
-      background: var(--surface);
-      padding: 32px;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .markdown-content h1 {
-      font-size: 32px;
-      margin-bottom: 16px;
-      color: var(--primary);
-    }
-
-    .markdown-content h2 {
-      font-size: 24px;
-      margin-top: 32px;
-      margin-bottom: 16px;
-      color: var(--text);
-    }
-
-    .markdown-content table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 24px 0;
-      font-size: 14px;
-    }
-
-    .markdown-content th {
-      background: var(--surface-light);
-      padding: 12px;
-      text-align: left;
-      font-weight: 600;
-      border: 1px solid var(--border);
-    }
-
-    .markdown-content td {
-      padding: 12px;
-      border: 1px solid var(--border);
-    }
-
-    .markdown-content tr:hover {
-      background: var(--surface-light);
-    }
-
-    .markdown-content p {
-      margin: 16px 0;
-      color: var(--text-secondary);
-    }
-
-    .markdown-content hr {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 32px 0;
-    }
-
-    .loading {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-      font-size: 18px;
-      color: var(--text-secondary);
-    }
-
-    .error {
-      padding: 32px;
-      text-align: center;
-      color: var(--danger);
-    }
-
-    /* スクロールバー */
-    ::-webkit-scrollbar {
-      width: 12px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: var(--surface);
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: var(--surface-light);
-      border-radius: 6px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--border);
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <!-- サイドバー -->
-    <div class="sidebar">
-      <div class="sidebar-header">
-        <h1>📋 要求管理ビューアー</h1>
-        <p>リアルタイム自動更新</p>
-      </div>
-      <div class="view-list" id="viewList"></div>
-    </div>
-
-    <!-- メインコンテンツ -->
-    <div class="main-content">
-      <div class="content-header">
-        <h2 id="currentViewName">ビューを選択してください</h2>
-        <div class="refresh-indicator" id="refreshIndicator">
-          <span>✓</span>
-          <span>更新しました</span>
-        </div>
-      </div>
-      <div class="content-body">
-        <div id="content" class="loading">
-          ビューを選択してください
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const views = ${JSON.stringify(VIEWS)};
-    let currentView = null;
-    let lastModified = {};
-    let eventSource = null;
-
-    // ビューボタンを生成
-    const viewList = document.getElementById('viewList');
-    views.forEach(view => {
-      const button = document.createElement('button');
-      button.className = 'view-button';
-      button.innerHTML = \`
-        <span class="icon">\${view.icon}</span>
-        <span class="name">\${view.name}</span>
-      \`;
-      button.addEventListener('click', () => loadView(view));
-      viewList.appendChild(button);
-    });
-
-    // ビューを読み込み
-    async function loadView(view) {
-      currentView = view;
-
-      // アクティブ状態を更新
-      document.querySelectorAll('.view-button').forEach((btn, idx) => {
-        btn.classList.toggle('active', views[idx].id === view.id);
-      });
-
-      document.getElementById('currentViewName').textContent = view.name;
-      document.getElementById('content').innerHTML = '<div class="loading">読み込み中...</div>';
-
-      try {
-        if (view.id === 'operation-logs') {
-          const logResponse = await fetch('/api/operation-logs-data');
-          const logData = await logResponse.json();
-          
-          let html = '<h1>🔍 操作履歴</h1><p>まだ操作履歴がありません</p>';
-          
-          if (logData.logs && logData.logs.length > 0) {
-            html = '<h1>🔍 操作履歴（デバッグ）</h1><h2>統計: ' + logData.stats.totalOperations + ' 件</h2>';
-            logData.logs.forEach(log => {
-              html += '<div style="border:1px solid #475569; padding:16px; margin:16px 0"><h3>' + log.operation + '</h3><p>ツール: ' + log.toolName + '</p><details><summary>詳細</summary><pre>' + JSON.stringify(log.parameters, null, 2) + '</pre></details></div>';
-            });
-          }
-          
-          document.getElementById('content').innerHTML = '<div class="markdown-content">' + html + '</div>';
-          return;
-        }
-        const response = await fetch(\`/api/view/\${view.id}\`);
-        const data = await response.json();
-
-        if (data.error) {
-          document.getElementById('content').innerHTML = \`<div class="error">\${data.error}</div>\`;
-          return;
-        }
-
-        document.getElementById('content').innerHTML = \`<div class="markdown-content">\${data.html}</div>\`;
-        lastModified[view.id] = data.lastModified;
-      } catch (error) {
-        document.getElementById('content').innerHTML = \`<div class="error">エラー: \${error.message}</div>\`;
-      }
-    }
-
-    // SSEで自動更新を監視
-    function connectSSE() {
-      if (eventSource) {
-        eventSource.close();
-      }
-
-      eventSource = new EventSource('/api/watch');
-
-      eventSource.onmessage = async (event) => {
-        const data = JSON.parse(event.data);
-
-        if (currentView && data.changed) {
-          // 現在のビューが更新されたかチェック
-          const shouldReload = data.changed.some(file =>
-            file.includes(currentView.id)
-          );
-
-          if (shouldReload) {
-            console.log('ビューが更新されました。再読み込みします...');
-            await loadView(currentView);
-
-            // 更新インジケータを表示
-            const indicator = document.getElementById('refreshIndicator');
-            indicator.classList.add('show');
-            setTimeout(() => {
-              indicator.classList.remove('show');
-            }, 2000);
-          }
-        }
-      };
-
-      eventSource.onerror = () => {
-        console.error('SSE接続エラー。再接続します...');
-        setTimeout(connectSSE, 3000);
-      };
-    }
-
-    // 初期化
-    connectSSE();
-
-    // 最初のビューを自動的に読み込み
-    if (views.length > 0) {
-      loadView(views[0]);
-    }
-  </script>
-</body>
-</html>
-  `;
-
-  res.send(html);
-});
-
-// ビューのコンテンツを取得
-app.get('/api/view/:viewId', async (req, res) => {
-  const { viewId } = req.params;
-
-  try {
-    const mdPath = path.join(process.cwd(), 'views', 'markdown', `${viewId}.md`);
-    const content = await fs.readFile(mdPath, 'utf-8');
-    const html = marked(content);
-    const stats = await fs.stat(mdPath);
-
-    res.json({
-      html,
-      lastModified: stats.mtimeMs,
-    });
-  } catch (error: any) {
-    res.json({
-      error: `ビューの読み込みに失敗しました: ${error.message}`,
-    });
-  }
-});
-
-// SSE (Server-Sent Events) でファイル変更を監視
-app.get('/api/watch', (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-
-  const viewsDir = path.join(process.cwd(), 'views', 'markdown');
-
-  // chokidarでファイル変更を監視
-  const watcher = chokidar.watch(viewsDir, {
-    ignoreInitial: true,
-    awaitWriteFinish: {
-      stabilityThreshold: 200,
-      pollInterval: 100,
-    },
-  });
-
-  watcher.on('change', (filePath) => {
-    const changed = [path.basename(filePath, '.md')];
-    res.write(`data: ${JSON.stringify({ changed })}\n\n`);
-  });
-
-  // クライアントが接続を切った時にwatcherをクリーンアップ
-  req.on('close', () => {
-    watcher.close();
-    res.end();
-  });
-});
-
-// チャットAPIエンドポイント - MCPツール統合版
-app.post('/api/chat', express.json(), async (req, res) => {
-  try {
-    const { message } = req.body;
-    await storage.initialize();
-    await validator.initialize();
-
-    let response = '';
-    const messageLower = message.toLowerCase();
-
-    // 1. 要求の妥当性チェック
-    if (messageLower.includes('妥当性') || messageLower.includes('バリデーション') || messageLower.includes('チェック')) {
-      // 要求IDを抽出
-      const idMatch = message.match(/([A-Z]+-\d+)/i);
-
-      if (idMatch) {
-        const reqId = idMatch[1].toUpperCase();
-        const requirement = await storage.getRequirement(reqId);
-
-        if (requirement) {
-          const report = await validator.validate(reqId);
-
-          if (report.isValid) {
-            response = `✅ **要求 ${reqId} の妥当性チェック結果**\n\n`;
-            response += `**タイトル**: ${requirement.title}\n`;
-            response += `**ステータス**: すべての検証をパスしました\n\n`;
-            response += `📊 検証サマリ:\n`;
-            response += `• エラー: ${report.errorCount}件\n`;
-            response += `• 警告: ${report.warningCount}件\n`;
-            response += `• 情報: ${report.infoCount}件\n`;
-          } else {
-            response = `⚠️ **要求 ${reqId} の妥当性チェック結果**\n\n`;
-            response += `**タイトル**: ${requirement.title}\n`;
-            response += `**ステータス**: 問題が検出されました\n\n`;
-            response += `📊 検証サマリ:\n`;
-            response += `• エラー: ${report.errorCount}件\n`;
-            response += `• 警告: ${report.warningCount}件\n`;
-            response += `• 情報: ${report.infoCount}件\n\n`;
-
-            if (report.errorCount > 0) {
-              response += `🚨 **エラー**:\n`;
-              report.results.filter(r => r.severity === 'error').forEach(r => {
-                response += `• [${r.ruleName}] ${r.message}\n`;
-                if (r.suggestion) response += `  💡 提案: ${r.suggestion}\n`;
-              });
-              response += `\n`;
-            }
-
-            if (report.warningCount > 0) {
-              response += `⚠️ **警告**:\n`;
-              report.results.filter(r => r.severity === 'warning').forEach(r => {
-                response += `• [${r.ruleName}] ${r.message}\n`;
-                if (r.suggestion) response += `  💡 提案: ${r.suggestion}\n`;
-              });
-            }
-          }
-        } else {
-          response = `❌ 要求ID「${reqId}」が見つかりませんでした。\n\n要求IDを確認してください。`;
-        }
-      } else {
-        response = '要求IDを指定してください。\n\n例: 「STK-001の妥当性をチェック」';
-      }
-    }
-
-    // 2. 要求の検索
-    else if (messageLower.includes('検索') || messageLower.includes('探')) {
-      // キーワード抽出（簡易版）
-      const keywords = message.match(/「(.+?)」/);
-      const keyword = keywords ? keywords[1] : '';
-
-      if (keyword) {
-        const allReqs = await storage.getAllRequirements();
-        const results = allReqs.filter(req =>
-          req.title.includes(keyword) ||
-          req.description.includes(keyword) ||
-          (req.rationale && req.rationale.includes(keyword))
-        );
-
-        if (results.length > 0) {
-          response = `🔍 **検索結果**: キーワード「${keyword}」\n\n`;
-          response += `${results.length}件の要求が見つかりました:\n\n`;
-          results.slice(0, 10).forEach(req => {
-            const typeIcon = req.type === 'stakeholder' ? '👥' : req.type === 'system' ? '⚙️' : '🔧';
-            response += `${typeIcon} **${req.id}**: ${req.title}\n`;
-            response += `   📝 ${req.description.substring(0, 60)}...\n`;
-            response += `   🏷️ ${req.category} | 📊 ${req.priority} | ✅ ${req.status}\n\n`;
-          });
-
-          if (results.length > 10) {
-            response += `\n...他${results.length - 10}件`;
-          }
-        } else {
-          response = `🔍 キーワード「${keyword}」に一致する要求が見つかりませんでした。`;
-        }
-      } else {
-        response = '検索キーワードを「」で囲んで指定してください。\n\n例: 「搬送」を検索';
-      }
-    }
-
-    // 3. 統計情報の表示
-    else if (messageLower.includes('統計') || messageLower.includes('サマリ') || messageLower.includes('一覧')) {
-      const allReqs = await storage.getAllRequirements();
-
-      const stakeholderReqs = allReqs.filter(r => r.type === 'stakeholder');
-      const systemReqs = allReqs.filter(r => r.type === 'system');
-      const functionalReqs = allReqs.filter(r => r.type === 'system_functional' || r.type === 'functional');
-
-      const approvedReqs = allReqs.filter(r => r.status === 'approved');
-      const criticalReqs = allReqs.filter(r => r.priority === 'critical');
-      const highReqs = allReqs.filter(r => r.priority === 'high');
-
-      response = `📊 **要求管理統計情報**\n\n`;
-      response += `### 📈 総計\n`;
-      response += `• 総要求数: **${allReqs.length}件**\n\n`;
-
-      response += `### 📋 要求タイプ別\n`;
-      response += `• 👥 ステークホルダ要求: ${stakeholderReqs.length}件\n`;
-      response += `• ⚙️ システム要求: ${systemReqs.length}件\n`;
-      response += `• 🔧 機能要求: ${functionalReqs.length}件\n\n`;
-
-      response += `### ✅ ステータス\n`;
-      response += `• 承認済み: ${approvedReqs.length}件 (${Math.round(approvedReqs.length / allReqs.length * 100)}%)\n\n`;
-
-      response += `### 🚨 優先度\n`;
-      response += `• Critical: ${criticalReqs.length}件\n`;
-      response += `• High: ${highReqs.length}件\n\n`;
-
-      response += `### 📍 カテゴリ\n`;
-      const categories = [...new Set(allReqs.map(r => r.category))];
-      categories.forEach(cat => {
-        const count = allReqs.filter(r => r.category === cat).length;
-        response += `• ${cat}: ${count}件\n`;
-      });
-    }
-
-    // 4. 依存関係の分析
-    else if (messageLower.includes('依存') || messageLower.includes('関係')) {
-      const idMatch = message.match(/([A-Z]+-\d+)/i);
-
-      if (idMatch) {
-        const reqId = idMatch[1].toUpperCase();
-        const requirement = await storage.getRequirement(reqId);
-
-        if (requirement) {
-          const allReqs = await storage.getAllRequirements();
-
-          // 上位要求（この要求が依存・洗練しているもの）
-          const parents = allReqs.filter(r =>
-            requirement.dependencies.includes(r.id) ||
-            (requirement.refines && requirement.refines.includes(r.id)) ||
-            requirement.parentId === r.id
-          );
-
-          // 下位要求（この要求に依存・洗練しているもの）
-          const children = allReqs.filter(r =>
-            r.dependencies.includes(reqId) ||
-            (r.refines && r.refines.includes(reqId)) ||
-            r.parentId === reqId
-          );
-
-          response = `🔗 **依存関係分析**: ${reqId}\n\n`;
-          response += `**タイトル**: ${requirement.title}\n\n`;
-
-          if (parents.length > 0) {
-            response += `### ⬆️ 上位要求 (${parents.length}件)\n`;
-            parents.forEach(p => {
-              const typeIcon = p.type === 'stakeholder' ? '👥' : p.type === 'system' ? '⚙️' : '🔧';
-              response += `• ${typeIcon} **${p.id}**: ${p.title}\n`;
-            });
-            response += `\n`;
-          } else {
-            response += `### ⬆️ 上位要求\n• なし（最上位要求です）\n\n`;
-          }
-
-          if (children.length > 0) {
-            response += `### ⬇️ 下位要求 (${children.length}件)\n`;
-            children.forEach(c => {
-              const typeIcon = c.type === 'stakeholder' ? '👥' : c.type === 'system' ? '⚙️' : '🔧';
-              response += `• ${typeIcon} **${c.id}**: ${c.title}\n`;
-            });
-          } else {
-            response += `### ⬇️ 下位要求\n• なし（最下位要求です）\n`;
-          }
-        } else {
-          response = `❌ 要求ID「${reqId}」が見つかりませんでした。`;
-        }
-      } else {
-        response = '要求IDを指定してください。\n\n例: 「STK-001の依存関係を分析」';
-      }
-    }
-
-    // 5. 要求の詳細表示
-    else if (messageLower.includes('詳細') || messageLower.includes('表示')) {
-      const idMatch = message.match(/([A-Z]+-\d+)/i);
-
-      if (idMatch) {
-        const reqId = idMatch[1].toUpperCase();
-        const requirement = await storage.getRequirement(reqId);
-
-        if (requirement) {
-          const typeIcon = requirement.type === 'stakeholder' ? '👥' : requirement.type === 'system' ? '⚙️' : '🔧';
-          const statusIcon = requirement.status === 'approved' ? '✅' : requirement.status === 'proposed' ? '📝' : '📋';
-          const priorityIcon = requirement.priority === 'critical' ? '🚨' : requirement.priority === 'high' ? '⚠️' : requirement.priority === 'medium' ? '📌' : '📍';
-
-          response = `${typeIcon} **要求詳細**: ${reqId}\n\n`;
-          response += `### 基本情報\n`;
-          response += `**タイトル**: ${requirement.title}\n`;
-          response += `**ステータス**: ${statusIcon} ${requirement.status}\n`;
-          response += `**優先度**: ${priorityIcon} ${requirement.priority}\n`;
-          response += `**カテゴリ**: ${requirement.category}\n`;
-          response += `**タイプ**: ${requirement.type || '未設定'}\n\n`;
-
-          response += `### 📝 説明\n${requirement.description}\n\n`;
-
-          if (requirement.rationale) {
-            response += `### 💡 理由\n${requirement.rationale}\n\n`;
-          }
-
-          if (requirement.tags.length > 0) {
-            response += `### 🏷️ タグ\n${requirement.tags.join(', ')}\n\n`;
-          }
-
-          response += `### 📅 日時\n`;
-          response += `• 作成: ${new Date(requirement.createdAt).toLocaleString('ja-JP')}\n`;
-          response += `• 更新: ${new Date(requirement.updatedAt).toLocaleString('ja-JP')}\n`;
-        } else {
-          response = `❌ 要求ID「${reqId}」が見つかりませんでした。`;
-        }
-      } else {
-        response = '要求IDを指定してください。\n\n例: 「STK-001の詳細を表示」';
-      }
-    }
-
-    // 6. 要求の更新（簡易版 - 説明の更新のみ）
-    else if (messageLower.includes('更新') || messageLower.includes('変更')) {
-      const idMatch = message.match(/([A-Z]+-\d+)/i);
-
-      if (idMatch) {
-        const reqId = idMatch[1].toUpperCase();
-        const requirement = await storage.getRequirement(reqId);
-
-        if (requirement) {
-          // 現在の情報を表示
-          response = `📝 **要求の更新**: ${reqId}\n\n`;
-          response += `**現在のタイトル**: ${requirement.title}\n\n`;
-          response += `更新機能は現在開発中です。\n\n`;
-          response += `以下の情報を指定することで、要求を更新できるようになります:\n`;
-          response += `• タイトル\n`;
-          response += `• 説明\n`;
-          response += `• ステータス (draft/proposed/approved)\n`;
-          response += `• 優先度 (critical/high/medium/low)\n`;
-          response += `• タグ\n\n`;
-          response += `現在は、左側のツリービューから要求をクリックして手動で編集してください。`;
-        } else {
-          response = `❌ 要求ID「${reqId}」が見つかりませんでした。`;
-        }
-      } else {
-        response = '更新する要求IDを指定してください。\n\n例: 「STK-001を更新」';
-      }
-    }
-
-    // 7. デフォルトヘルプ
-    else {
-      response = `こんにちは！要求管理システムのアシスタントです。🤖\n\n`;
-      response += `以下の操作ができます:\n\n`;
-      response += `### 📋 利用可能なコマンド\n\n`;
-      response += `**1. 妥当性チェック** ✅\n`;
-      response += `例: 「STK-001の妥当性をチェック」\n`;
-      response += `• 要求の整合性を検証します\n\n`;
-
-      response += `**2. 要求検索** 🔍\n`;
-      response += `例: 「搬送」を検索\n`;
-      response += `• キーワードで要求を検索します\n\n`;
-
-      response += `**3. 統計情報** 📊\n`;
-      response += `例: 「統計を表示」\n`;
-      response += `• 要求の統計情報を表示します\n\n`;
-
-      response += `**4. 依存関係分析** 🔗\n`;
-      response += `例: 「SYS-001の依存関係を分析」\n`;
-      response += `• 上位・下位要求を表示します\n\n`;
-
-      response += `**5. 要求詳細表示** 📋\n`;
-      response += `例: 「FUNC-001の詳細を表示」\n`;
-      response += `• 要求の完全な情報を表示します\n\n`;
-
-      response += `**6. 要求更新** 📝\n`;
-      response += `例: 「STK-001を更新」\n`;
-      response += `• 要求の情報を更新します（開発中）\n\n`;
-
-      response += `何をお手伝いしましょうか？`;
-    }
-
-    res.json({ response });
-  } catch (error: any) {
-    console.error('Chat API error:', error);
-    res.status(500).json({
-      response: `❌ エラーが発生しました:\n\n${error.message}\n\nもう一度お試しください。`
-    });
-  }
-});
-
-// ツリービューAPIエンドポイント
-app.get('/api/tree', async (req, res) => {
-  try {
-    await storage.initialize();
-    const requirements = await storage.getAllRequirements();
-
-    // 全ての要求を完全にフラットに返す
-    // 重複を排除するために、IDでユニークにする
-    const uniqueRequirements = Array.from(
-      new Map(requirements.map(req => [req.id, req])).values()
-    );
-
-    const flatTree = uniqueRequirements.map(req => ({
-      requirement: req,
-      children: [],
-      level: 0,
-      indent: 0
-    }));
-
-    res.json({
-      tree: flatTree,
-      count: flatTree.length,
-    });
-  } catch (error: any) {
-    res.json({
-      error: error.message,
-      tree: [],
-      count: 0,
-    });
-  }
-});
-
-// ビュー設定を取得するAPIエンドポイント
-app.get('/api/view-config', async (req, res) => {
-  try {
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    const configPath = path.join(process.cwd(), 'view-config.json');
-
-    try {
-      const configData = await fs.readFile(configPath, 'utf-8');
-      const config = JSON.parse(configData);
-      res.json(config);
-    } catch (error) {
-      // ファイルが存在しない場合はデフォルト設定を返す
-      res.json({
-        views: [
-          { id: 'list', name: 'リスト', type: 'list' },
-          { id: 'matrix-stakeholder-system', name: 'マトリックス: ステークホルダ→システム', type: 'matrix' },
-          { id: 'matrix-system-functional', name: 'マトリックス: システム→機能', type: 'matrix' }
-        ]
-      });
-    }
-  } catch (error: any) {
-    res.json({
-      error: error.message,
-      views: [
-        { id: 'list', name: 'リスト', type: 'list' }
-      ]
-    });
-  }
-});
-
-// 要求の上位・下位関係を取得するAPIエンドポイント
-app.get('/api/requirement/:id/relations', async (req, res) => {
-  try {
-    await storage.initialize();
-    const { id } = req.params;
-    const requirement = await storage.getRequirement(id);
-
-    if (!requirement) {
-      res.json({ error: '要求が見つかりません', parents: [], children: [] });
-      return;
-    }
-
-    const allRequirements = await storage.getAllRequirements();
-
-    // 上位要求を取得（この要求がdependencies/refinesに含むもの、またはparentIdで指定されているもの）
-    const parents = allRequirements.filter(r =>
-      requirement.dependencies.includes(r.id) ||
-      (requirement.refines && requirement.refines.includes(r.id)) ||
-      requirement.parentId === r.id
-    );
-
-    // 下位要求を取得（この要求をdependencies/refinesに含む、またはparentIdとして指定しているもの）
-    const children = allRequirements.filter(r =>
-      r.dependencies.includes(id) ||
-      (r.refines && r.refines.includes(id)) ||
-      r.parentId === id
-    );
-
-    res.json({
-      parents: parents.map(r => ({
-        id: r.id,
-        title: r.title,
-        type: r.type,
-        category: r.category,
-        status: r.status,
-        priority: r.priority
-      })),
-      children: children.map(r => ({
-        id: r.id,
-        title: r.title,
-        type: r.type,
-        category: r.category,
-        status: r.status,
-        priority: r.priority
-      }))
-    });
-  } catch (error: any) {
-    res.json({ error: error.message, parents: [], children: [] });
-  }
-});
-
-// サーバー起動
-
-// 操作ログAPIエンドポイント
-app.get('/api/operation-logs-data', async (req, res) => {
-  try {
-    const logger = new OperationLogger('./data');
-    await logger.initialize();
-    
-    const logs = logger.getAllLogs();
-    const stats = logger.getStatistics();
-    
-    res.json({ logs, stats });
-  } catch (error: any) {
-    res.json({ error: error.message, logs: [], stats: {} });
-  }
-});
-app.listen(PORT, () => {
-  console.log(`\n========================================`);
-  console.log(`🌐 要求管理ビューアーを起動しました`);
-  console.log(`========================================`);
-  console.log(`\n📍 アクセスURL: http://localhost:${PORT}`);
-  console.log(`\n✨ 機能:`);
-  console.log(`   - ${VIEWS.length}種類のビューをブラウザで表示`);
-  console.log(`   - ファイル変更時の自動リフレッシュ`);
-  console.log(`   - モダンなダークテーマUI\n`);
-  console.log(`終了するには Ctrl+C を押してください\n`);
-});
+  
