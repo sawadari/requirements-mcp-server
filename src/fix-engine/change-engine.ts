@@ -43,33 +43,72 @@ export class ChangeEngine {
   }
 
   /**
-   * ChangeSetを適用
+   * ChangeSetを適用（トランザクション境界）
+   * すべての変更が成功するか、すべてロールバックされる
    */
   async apply(
     changeSet: ChangeSet,
     requirements: Record<ReqID, Requirement>
   ): Promise<{ success: boolean; modified: Record<ReqID, Requirement>; errors: string[] }> {
-    const modified = { ...requirements };
+    // 1. 元の状態をディープコピー（ロールバック用）
+    const original = JSON.parse(JSON.stringify(requirements)) as Record<ReqID, Requirement>;
+    const modified = JSON.parse(JSON.stringify(requirements)) as Record<ReqID, Requirement>;
     const errors: string[] = [];
+    const appliedChanges: Change[] = [];
 
     try {
+      // 2. すべての変更をバッファに適用
       for (const change of changeSet.changes) {
         const result = await this.applyChange(change, modified);
         if (!result.success) {
           errors.push(result.error || 'Unknown error');
-          // エラーが発生した場合、それまでの変更をロールバック
-          return { success: false, modified: requirements, errors };
+
+          // 3. 失敗時: 適用済みの変更を逆順でロールバック
+          console.error(`[ChangeEngine] Change failed, rolling back ${appliedChanges.length} changes`);
+          await this.rollbackAppliedChanges(appliedChanges, modified, original);
+
+          return { success: false, modified: original, errors };
         }
+        appliedChanges.push(change);
       }
 
-      // 適用成功後、changeSetのstatusを更新
+      // 4. 全件成功: 状態をコミット
       changeSet.status = 'applied';
       changeSet.appliedAt = new Date().toISOString();
+      changeSet.appliedBy = 'auto'; // または user ID
 
       return { success: true, modified, errors: [] };
     } catch (error: any) {
-      errors.push(error.message);
-      return { success: false, modified: requirements, errors };
+      errors.push(`Unexpected error: ${error.message}`);
+
+      // 予期しないエラーでも必ずロールバック
+      console.error(`[ChangeEngine] Unexpected error, rolling back`);
+      await this.rollbackAppliedChanges(appliedChanges, modified, original);
+
+      return { success: false, modified: original, errors };
+    }
+  }
+
+  /**
+   * 適用済みの変更を逆順でロールバック（内部ヘルパー）
+   */
+  private async rollbackAppliedChanges(
+    appliedChanges: Change[],
+    current: Record<ReqID, Requirement>,
+    original: Record<ReqID, Requirement>
+  ): Promise<void> {
+    for (let i = appliedChanges.length - 1; i >= 0; i--) {
+      const change = appliedChanges[i];
+      if (change.inverse) {
+        try {
+          await this.applyChange(change.inverse, current);
+        } catch (rollbackError: any) {
+          console.error(`[ChangeEngine] Rollback failed for change ${i}: ${rollbackError.message}`);
+          // ロールバック失敗時は元の状態を直接復元
+          Object.assign(current, original);
+          return;
+        }
+      }
     }
   }
 

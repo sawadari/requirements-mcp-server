@@ -155,14 +155,43 @@ export class FixExecutor {
   }
 
   /**
-   * 自動適用可能かどうかを判定
+   * 自動適用可能かどうかを判定（Strict/Suggest衝突解消ロジック）
+   *
+   * マトリクス判定:
+   * - global mode=strict & action mode=auto → 自動適用 ✅
+   * - global mode=strict & action mode=assist → 提案のみ ⚠️
+   * - global mode=suggest → すべて提案のみ ⚠️
    */
   private canAutoApply(changeSet: ChangeSet): boolean {
-    // すべてのアクションがautoモードならtrue
+    // グローバルモードがsuggestなら、すべて提案止まり
+    if (this.policy.mode === 'suggest' || this.policy.mode === 'assist') {
+      return false;
+    }
+
+    // グローバルモードがstrictの場合、各変更のアクションモードを確認
     return changeSet.changes.every(change => {
-      // 操作タイプから判定（簡易版）
-      const autoOps = ['break_cycle', 'rewire'];
-      return autoOps.includes(change.op);
+      // 操作タイプから対応するルールを取得
+      const violation = changeSet.violations[0]; // 簡易版: 最初の違反コードで判定
+      const rule = this.policy.rules.find(r =>
+        r.whenViolation === violation || r.id === violation
+      );
+
+      if (!rule) {
+        // ルールが見つからない場合は安全側に倒して提案のみ
+        console.warn(`[FixExecutor] No rule found for violation: ${violation}`);
+        return false;
+      }
+
+      // アクションのモードを確認
+      const action = rule.actions.find(a => a.use === change.op);
+      if (!action) {
+        console.warn(`[FixExecutor] No action found for op: ${change.op}`);
+        return false;
+      }
+
+      // action.mode が 'auto' のみ自動適用
+      // 'assist' は提案のみ（human approval required）
+      return action.mode === 'auto';
     });
   }
 

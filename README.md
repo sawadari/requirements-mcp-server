@@ -329,6 +329,16 @@ requirements-mcp-serverは、要求変更時に自動的に妥当性を評価し
 3. **自動修正**（違反がある場合）
    - FixExecutorが修正プランを生成
    - 設定に応じて自動適用（Strictモード）または提案のみ（Suggestモード）
+   - 修正の適用順序（局所化→波及）:
+
+     | 順序 | 対象 | 説明 |
+     |------|------|------|
+     | 1 | 対象要求 | 違反が発生した要求自体を修正 |
+     | 2 | 親要求 | refinesで参照される上位要求 |
+     | 3 | 兄弟要求 | 同じ親を持つ要求 |
+     | 4 | 子要求 | 対象要求をrefinesする下位要求 |
+     | 5 | 横依存 | dependenciesで参照される要求 |
+     | 6 | テスト | 関連するテストケース |
 
 4. **再検証**
    - 修正後の要求を再検証
@@ -344,7 +354,7 @@ npx tsx scripts/test-auto-validation.ts
 
 ### カスタマイズ
 
-修正ポリシーは `src/fix-engine/fix-policy.jsonc` でカスタマイズ可能です。詳細は[Fix Engineドキュメント](./docs/fix-engine.md)を参照してください。
+修正ポリシーは `fix-policy.jsonc` でカスタマイズ可能です。詳細は[Fix Engineドキュメント](./FIX-ENGINE-README.md)を参照してください。
 
 ## プロジェクト構造
 

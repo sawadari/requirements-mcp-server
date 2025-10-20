@@ -194,6 +194,7 @@ export interface FixPolicy {
   policy: string;
   version: string;
   description: string;
+  mode?: 'strict' | 'suggest' | 'assist'; // グローバル実行モード（オプション）
   principles: Record<string, string>;
   stopping: {
     max_iterations: number;
