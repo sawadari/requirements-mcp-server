@@ -21,6 +21,11 @@ import { OperationLogger } from './operation-logger.js';
 import { RequirementValidator } from './validator.js';
 import { ValidationEngine } from './validation/validation-engine.js';
 import { NLPAnalyzer } from './validation/nlp-analyzer.js';
+import { FixExecutor } from './fix-engine/fix-executor.js';
+import { ChangeEngine } from './fix-engine/change-engine.js';
+import type { FixPolicy, ChangeSet } from './fix-engine/types.js';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 // Zodスキーマの定義
 const AddRequirementSchema = z.object({
@@ -96,6 +101,23 @@ const GetValidationReportSchema = z.object({
   format: z.enum(['json', 'markdown']).optional().describe('レポート形式（デフォルト: json）'),
 });
 
+const LoadPolicySchema = z.object({
+  policyPath: z.string().optional().describe('ポリシーファイルのパス（デフォルト: ./fix-policy.jsonc）'),
+});
+
+const PreviewFixesSchema = z.object({
+  changeSetId: z.string().optional().describe('プレビューするChangeSetのID（省略時は最新）'),
+});
+
+const ApplyFixesSchema = z.object({
+  changeSetId: z.string().describe('適用するChangeSetのID'),
+  force: z.boolean().optional().describe('警告を無視して強制適用するか'),
+});
+
+const RollbackFixesSchema = z.object({
+  changeSetId: z.string().describe('ロールバックするChangeSetのID'),
+});
+
 class RequirementsMCPServer {
   private server: Server;
   private storage: RequirementsStorage;
@@ -105,6 +127,10 @@ class RequirementsMCPServer {
   private validator: RequirementValidator;
   private validationEngine: ValidationEngine | null = null;
   private validationResults: Map<string, any> = new Map();
+  private fixExecutor: FixExecutor | null = null;
+  private changeEngine: ChangeEngine;
+  private changeSets: Map<string, ChangeSet> = new Map();
+  private currentPolicy: FixPolicy | null = null;
 
   constructor() {
     this.storage = new RequirementsStorage('./data');
@@ -112,6 +138,7 @@ class RequirementsMCPServer {
     this.viewExporter = new ViewExporter(this.storage);
     this.logger = new OperationLogger('./data');
     this.validator = new RequirementValidator(this.storage);
+    this.changeEngine = new ChangeEngine();
 
     // ValidationEngineを非同期で初期化
     ValidationEngine.create().then(engine => {
@@ -185,6 +212,14 @@ class RequirementsMCPServer {
             return await this.handleValidateAllRequirements(args);
           case 'get_validation_report':
             return await this.handleGetValidationReport(args);
+          case 'load_policy':
+            return await this.handleLoadPolicy(args);
+          case 'preview_fixes':
+            return await this.handlePreviewFixes(args);
+          case 'apply_fixes':
+            return await this.handleApplyFixes(args);
+          case 'rollback_fixes':
+            return await this.handleRollbackFixes(args);
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
@@ -363,6 +398,49 @@ class RequirementsMCPServer {
           properties: {
             format: { type: 'string', enum: ['json', 'markdown'], description: 'レポート形式（デフォルト: json）' },
           },
+        },
+      },
+      {
+        name: 'load_policy',
+        description: 'Fix Engineのポリシーファイルを読み込みます。ポリシーには修正ルール、実行モード（strict/suggest/assist）、停止条件などが定義されています。',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            policyPath: { type: 'string', description: 'ポリシーファイルのパス（デフォルト: ./fix-policy.jsonc）' },
+          },
+        },
+      },
+      {
+        name: 'preview_fixes',
+        description: '提案された修正のプレビューを表示します。ChangeSetの内容、影響を受ける要求、変更の詳細を確認できます。実際には適用されません。',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            changeSetId: { type: 'string', description: 'プレビューするChangeSetのID（省略時は最新）' },
+          },
+        },
+      },
+      {
+        name: 'apply_fixes',
+        description: 'ChangeSetを適用して要求を修正します。トランザクション境界が保証され、失敗時は自動ロールバックされます。',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            changeSetId: { type: 'string', description: '適用するChangeSetのID' },
+            force: { type: 'boolean', description: '警告を無視して強制適用するか' },
+          },
+          required: ['changeSetId'],
+        },
+      },
+      {
+        name: 'rollback_fixes',
+        description: '適用済みのChangeSetをロールバックします。可逆性が保証されているChangeSetのみロールバック可能です。',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            changeSetId: { type: 'string', description: 'ロールバックするChangeSetのID' },
+          },
+          required: ['changeSetId'],
         },
       },
     ];
@@ -745,6 +823,279 @@ class RequirementsMCPServer {
         ],
       };
     }
+  }
+
+  private async handleLoadPolicy(args: any) {
+    const params = LoadPolicySchema.parse(args);
+    const policyPath = params.policyPath || './fix-policy.jsonc';
+
+    try {
+      // JSONCファイルを読み込み（コメント対応）
+      const content = await fs.readFile(policyPath, 'utf-8');
+
+      // JSONCパーサーを使用（コメントを除去）
+      const { parse } = await import('jsonc-parser');
+      this.currentPolicy = parse(content) as FixPolicy;
+
+      // FixExecutorを初期化
+      this.fixExecutor = new FixExecutor(this.currentPolicy);
+
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: `✅ ポリシーを読み込みました\n\n` +
+                  `**ポリシー名**: ${this.currentPolicy.policy}\n` +
+                  `**バージョン**: ${this.currentPolicy.version}\n` +
+                  `**実行モード**: ${this.currentPolicy.mode || 'strict'}\n` +
+                  `**ルール数**: ${this.currentPolicy.rules.length}件\n` +
+                  `**最大イテレーション**: ${this.currentPolicy.stopping.max_iterations}\n\n` +
+                  `Fix Engineが使用可能になりました。`,
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: `❌ ポリシーの読み込みに失敗しました: ${error.message}\n\n` +
+                  `パス: ${policyPath}`,
+          },
+        ],
+      };
+    }
+  }
+
+  private async handlePreviewFixes(args: any) {
+    const params = PreviewFixesSchema.parse(args);
+
+    if (!this.fixExecutor) {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: '❌ Fix Engineが初期化されていません。先に `load_policy` を実行してください。',
+          },
+        ],
+      };
+    }
+
+    // ChangeSetを取得
+    let changeSet: ChangeSet | undefined;
+
+    if (params.changeSetId) {
+      changeSet = this.changeSets.get(params.changeSetId);
+      if (!changeSet) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: `❌ ChangeSet "${params.changeSetId}" が見つかりません。`,
+            },
+          ],
+        };
+      }
+    } else {
+      // 最新のChangeSetを取得
+      const allChangeSets = Array.from(this.changeSets.values());
+      if (allChangeSets.length === 0) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: '❌ 利用可能なChangeSetがありません。先に検証を実行して修正を生成してください。',
+            },
+          ],
+        };
+      }
+      changeSet = allChangeSets[allChangeSets.length - 1];
+    }
+
+    // プレビューを生成
+    const requirements = await this.storage.getAllRequirements();
+    const reqRecord = Object.fromEntries(requirements.map((r: Requirement) => [r.id, r as any]));
+    const preview = this.changeEngine.preview(changeSet, reqRecord);
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: preview,
+        },
+      ],
+    };
+  }
+
+  private async handleApplyFixes(args: any) {
+    const params = ApplyFixesSchema.parse(args);
+
+    if (!this.fixExecutor) {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: '❌ Fix Engineが初期化されていません。先に `load_policy` を実行してください。',
+          },
+        ],
+      };
+    }
+
+    const changeSet = this.changeSets.get(params.changeSetId);
+    if (!changeSet) {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: `❌ ChangeSet "${params.changeSetId}" が見つかりません。`,
+          },
+        ],
+      };
+    }
+
+    if (changeSet.status === 'applied') {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: `⚠️ ChangeSet "${params.changeSetId}" は既に適用済みです。`,
+          },
+        ],
+      };
+    }
+
+    // 要求を取得
+    const requirements = await this.storage.getAllRequirements();
+    const reqRecord = Object.fromEntries(requirements.map((r: Requirement) => [r.id, r as any]));
+
+    // 適用
+    const result = await this.changeEngine.apply(changeSet, reqRecord);
+
+    if (!result.success) {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: `❌ ChangeSetの適用に失敗しました\n\n` +
+                  `**エラー**:\n${result.errors.map((e, i) => `${i + 1}. ${e}`).join('\n')}\n\n` +
+                  `トランザクションはロールバックされました。`,
+          },
+        ],
+      };
+    }
+
+    // ストレージを更新
+    for (const [id, req] of Object.entries(result.modified)) {
+      await this.storage.updateRequirement(id, req as any);
+    }
+
+    // ChangeSetを更新
+    this.changeSets.set(params.changeSetId, changeSet);
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: `✅ ChangeSetを適用しました\n\n` +
+                `**ChangeSet ID**: ${changeSet.id}\n` +
+                `**変更件数**: ${changeSet.changes.length}件\n` +
+                `**影響要求数**: ${changeSet.impacted.length}件\n` +
+                `**適用日時**: ${changeSet.appliedAt}\n\n` +
+                `要求が更新されました。`,
+        },
+      ],
+    };
+  }
+
+  private async handleRollbackFixes(args: any) {
+    const params = RollbackFixesSchema.parse(args);
+
+    if (!this.fixExecutor) {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: '❌ Fix Engineが初期化されていません。先に `load_policy` を実行してください。',
+          },
+        ],
+      };
+    }
+
+    const changeSet = this.changeSets.get(params.changeSetId);
+    if (!changeSet) {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: `❌ ChangeSet "${params.changeSetId}" が見つかりません。`,
+          },
+        ],
+      };
+    }
+
+    if (changeSet.status !== 'applied') {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: `⚠️ ChangeSet "${params.changeSetId}" は適用されていません。\n` +
+                  `現在のステータス: ${changeSet.status}`,
+          },
+        ],
+      };
+    }
+
+    if (!changeSet.reversible) {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: `❌ ChangeSet "${params.changeSetId}" は可逆性が保証されていないため、ロールバックできません。`,
+          },
+        ],
+      };
+    }
+
+    // 要求を取得
+    const requirements = await this.storage.getAllRequirements();
+    const reqRecord = Object.fromEntries(requirements.map((r: Requirement) => [r.id, r as any]));
+
+    // ロールバック
+    const result = await this.changeEngine.rollback(changeSet, reqRecord);
+
+    if (!result.success) {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: `❌ ロールバックに失敗しました\n\n` +
+                  `**エラー**:\n${result.errors.map((e, i) => `${i + 1}. ${e}`).join('\n')}`,
+          },
+        ],
+      };
+    }
+
+    // ストレージを更新
+    for (const [id, req] of Object.entries(result.restored)) {
+      await this.storage.updateRequirement(id, req as any);
+    }
+
+    // ChangeSetを更新
+    this.changeSets.set(params.changeSetId, changeSet);
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: `✅ ChangeSetをロールバックしました\n\n` +
+                `**ChangeSet ID**: ${changeSet.id}\n` +
+                `**変更件数**: ${changeSet.changes.length}件\n` +
+                `**影響要求数**: ${changeSet.impacted.length}件\n` +
+                `**ロールバック日時**: ${changeSet.rolledBackAt}\n\n` +
+                `要求が元の状態に戻されました。`,
+        },
+      ],
+    };
   }
 
   async start(): Promise<void> {
