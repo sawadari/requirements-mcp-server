@@ -17,6 +17,7 @@ import { StructureValidationEngine, HierarchyValidator, GraphHealthValidator } f
 import { NLPAnalyzer, QualityStyleValidator } from './nlp-analyzer.js';
 import { AbstractionValidator, MECEValidator } from './mece-validator.js';
 import { LLMEvaluator } from './llm-evaluator.js';
+import { OntologyManager, OntologyLoader } from '../ontology/index.js';
 
 /**
  * ルール設定ローダー
@@ -119,17 +120,44 @@ export class RuleConfigLoader {
  */
 export class ValidationEngine {
   private config: ValidationRuleConfig;
+  private ontologyManager?: OntologyManager;
 
-  constructor(config: ValidationRuleConfig) {
+  constructor(config: ValidationRuleConfig, ontologyManager?: OntologyManager) {
     this.config = config;
+    this.ontologyManager = ontologyManager;
+
+    // Set ontology manager for validators
+    if (ontologyManager) {
+      HierarchyValidator.setOntologyManager(ontologyManager);
+    }
   }
 
   /**
    * ファクトリメソッド: ルール設定を読み込んでエンジンを作成
    */
-  static async create(configPath?: string): Promise<ValidationEngine> {
+  static async create(configPath?: string, ontologyPath?: string): Promise<ValidationEngine> {
     const config = await RuleConfigLoader.loadRules(configPath);
-    return new ValidationEngine(config);
+
+    // Load ontology if path provided or from environment
+    let ontologyManager: OntologyManager | undefined;
+    try {
+      if (ontologyPath) {
+        ontologyManager = await OntologyLoader.loadFromFile(ontologyPath);
+      } else {
+        ontologyManager = await OntologyLoader.loadFromEnvironment();
+      }
+    } catch (error) {
+      console.warn('Failed to load ontology, continuing without it:', error);
+    }
+
+    return new ValidationEngine(config, ontologyManager);
+  }
+
+  /**
+   * Get the ontology manager
+   */
+  getOntologyManager(): OntologyManager | undefined {
+    return this.ontologyManager;
   }
 
   /**
@@ -180,6 +208,9 @@ export class ValidationEngine {
 
     // D: MECEルール
     const meceRules = this.config.rules.mece.filter(r => r.enabled);
+    if (this.ontologyManager) {
+      MECEValidator.setOntologyManager(this.ontologyManager);
+    }
     const meceViolations = MECEValidator.validateAll(
       req,
       allRequirements,

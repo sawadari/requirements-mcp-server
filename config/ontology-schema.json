@@ -1,0 +1,146 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Requirements Ontology Schema",
+  "description": "Defines the stages and rules for requirement hierarchy",
+  "version": "1.0.0",
+  "stages": [
+    {
+      "id": "stakeholder",
+      "name": "ステークホルダ要求",
+      "description": "システムを利用するステークホルダのニーズと期待",
+      "level": 1,
+      "abstractionLevel": "high",
+      "canHaveChildren": true,
+      "canHaveParent": false,
+      "parentStages": [],
+      "childStages": ["system"],
+      "color": "#4CAF50",
+      "icon": "👥"
+    },
+    {
+      "id": "system",
+      "name": "システム要求",
+      "description": "システムをブラックボックスとしてみたときの要求",
+      "level": 2,
+      "abstractionLevel": "medium",
+      "canHaveChildren": true,
+      "canHaveParent": true,
+      "parentStages": ["stakeholder"],
+      "childStages": ["functional"],
+      "color": "#2196F3",
+      "icon": "⚙️"
+    },
+    {
+      "id": "functional",
+      "name": "システム機能要求",
+      "description": "システムをホワイトボックスとしてみたときの要求（物理アーキテクチャに依存しない）",
+      "level": 3,
+      "abstractionLevel": "low",
+      "canHaveChildren": true,
+      "canHaveParent": true,
+      "parentStages": ["system"],
+      "childStages": [],
+      "color": "#FF9800",
+      "icon": "🔧"
+    }
+  ],
+  "derivationRules": {
+    "stakeholder": {
+      "allowedChildren": ["system"],
+      "meceRequired": true,
+      "description": "ステークホルダ要求はシステム要求に詳細化される"
+    },
+    "system": {
+      "allowedChildren": ["functional"],
+      "meceRequired": true,
+      "description": "システム要求はシステム機能要求に詳細化される"
+    },
+    "functional": {
+      "allowedChildren": [],
+      "meceRequired": true,
+      "description": "システム機能要求は最下層"
+    }
+  },
+  "granularityRules": {
+    "stakeholder": {
+      "descriptionLength": {
+        "min": 50,
+        "max": 300,
+        "recommended": 150
+      },
+      "titleLength": {
+        "min": 10,
+        "max": 80,
+        "recommended": 40
+      },
+      "abstractionScore": {
+        "min": 0.6,
+        "max": 1.0,
+        "recommended": 0.8
+      }
+    },
+    "system": {
+      "descriptionLength": {
+        "min": 100,
+        "max": 500,
+        "recommended": 250
+      },
+      "titleLength": {
+        "min": 15,
+        "max": 100,
+        "recommended": 50
+      },
+      "abstractionScore": {
+        "min": 0.4,
+        "max": 0.7,
+        "recommended": 0.5
+      }
+    },
+    "functional": {
+      "descriptionLength": {
+        "min": 150,
+        "max": 800,
+        "recommended": 400
+      },
+      "titleLength": {
+        "min": 20,
+        "max": 120,
+        "recommended": 60
+      },
+      "abstractionScore": {
+        "min": 0.0,
+        "max": 0.5,
+        "recommended": 0.3
+      }
+    }
+  },
+  "validationRules": {
+    "global": {
+      "maxDepth": 10,
+      "allowCycles": false,
+      "requireUniqueIds": true
+    },
+    "byStage": {
+      "stakeholder": {
+        "requiredFields": ["title", "description", "rationale", "priority"],
+        "optionalFields": ["author", "tags"],
+        "forbiddenFields": ["implementation_hints"]
+      },
+      "system": {
+        "requiredFields": ["title", "description", "priority", "category"],
+        "optionalFields": ["rationale", "author", "tags", "non_functional_attributes"],
+        "forbiddenFields": ["implementation_hints", "api_specification"]
+      },
+      "functional": {
+        "requiredFields": ["title", "description", "priority", "category"],
+        "optionalFields": ["rationale", "author", "tags", "implementation_hints", "api_specification"],
+        "forbiddenFields": []
+      }
+    }
+  },
+  "metadata": {
+    "author": "requirements-mcp-server",
+    "createdAt": "2025-10-21",
+    "description": "Default ontology for standard system development"
+  }
+}

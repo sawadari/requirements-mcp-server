@@ -10,13 +10,23 @@ import type {
   ValidationRule,
   ViolationSeverity,
 } from '../types.js';
+import type { OntologyManager } from '../ontology/ontology-manager.js';
 
 /**
  * 階層ルール検証（ドメインA）
  */
 export class HierarchyValidator {
+  private static ontologyManager?: OntologyManager;
+
   /**
-   * A1: レベル間の関係制約チェック
+   * オントロジーマネージャーを設定
+   */
+  static setOntologyManager(manager: OntologyManager) {
+    HierarchyValidator.ontologyManager = manager;
+  }
+
+  /**
+   * A1: レベル間の関係制約チェック（オントロジー対応）
    */
   static validateParentChildTypes(
     req: Requirement,
@@ -29,10 +39,13 @@ export class HierarchyValidator {
       return violations;
     }
 
-    const allowedPairs = rule.parameters?.allowedParentChildPairs || [
-      { parent: 'stakeholder', child: 'system' },
-      { parent: 'system', child: 'system_functional' },
-    ];
+    // オントロジーマネージャーがある場合はそれを使用
+    const allowedPairs = HierarchyValidator.ontologyManager
+      ? HierarchyValidator.buildAllowedPairsFromOntology()
+      : (rule.parameters?.allowedParentChildPairs || [
+          { parent: 'stakeholder', child: 'system' },
+          { parent: 'system', child: 'system_functional' },
+        ]);
 
     for (const parentId of req.refines) {
       const parent = allRequirements.get(parentId);
@@ -70,6 +83,29 @@ export class HierarchyValidator {
     }
 
     return violations;
+  }
+
+  /**
+   * オントロジーから許可ペアを構築
+   */
+  private static buildAllowedPairsFromOntology(): Array<{ parent: string; child: string }> {
+    if (!HierarchyValidator.ontologyManager) {
+      return [];
+    }
+
+    const pairs: Array<{ parent: string; child: string }> = [];
+    const stages = HierarchyValidator.ontologyManager.getAllStages();
+
+    for (const stage of stages) {
+      for (const childStageId of stage.childStages) {
+        pairs.push({
+          parent: stage.id,
+          child: childStageId,
+        });
+      }
+    }
+
+    return pairs;
   }
 
   /**

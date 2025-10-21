@@ -1,0 +1,226 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Web/AI System Requirements Ontology",
+  "description": "Ontology for Web and AI system development (User Story → Feature → API/Model → Implementation)",
+  "version": "1.0.0",
+  "stages": [
+    {
+      "id": "user_story",
+      "name": "ユーザーストーリー",
+      "description": "ユーザー視点での価値提供",
+      "level": 1,
+      "abstractionLevel": "high",
+      "canHaveChildren": true,
+      "canHaveParent": false,
+      "parentStages": [],
+      "childStages": ["feature"],
+      "color": "#E91E63",
+      "icon": "👤"
+    },
+    {
+      "id": "feature",
+      "name": "フィーチャー",
+      "description": "実装される機能",
+      "level": 2,
+      "abstractionLevel": "medium",
+      "canHaveChildren": true,
+      "canHaveParent": true,
+      "parentStages": ["user_story"],
+      "childStages": ["api", "model"],
+      "color": "#00BCD4",
+      "icon": "✨"
+    },
+    {
+      "id": "api",
+      "name": "API仕様",
+      "description": "APIエンドポイントとインターフェース",
+      "level": 3,
+      "abstractionLevel": "low",
+      "canHaveChildren": true,
+      "canHaveParent": true,
+      "parentStages": ["feature"],
+      "childStages": ["implementation"],
+      "color": "#8BC34A",
+      "icon": "🔌"
+    },
+    {
+      "id": "model",
+      "name": "モデル仕様",
+      "description": "データモデルとAIモデルの定義",
+      "level": 3,
+      "abstractionLevel": "low",
+      "canHaveChildren": true,
+      "canHaveParent": true,
+      "parentStages": ["feature"],
+      "childStages": ["implementation"],
+      "color": "#FFC107",
+      "icon": "🧠"
+    },
+    {
+      "id": "implementation",
+      "name": "実装要求",
+      "description": "具体的な実装レベルの要求",
+      "level": 4,
+      "abstractionLevel": "low",
+      "canHaveChildren": false,
+      "canHaveParent": true,
+      "parentStages": ["api", "model"],
+      "childStages": [],
+      "color": "#607D8B",
+      "icon": "💻"
+    }
+  ],
+  "derivationRules": {
+    "user_story": {
+      "allowedChildren": ["feature"],
+      "meceRequired": true,
+      "description": "ユーザーストーリーはフィーチャーに分解される"
+    },
+    "feature": {
+      "allowedChildren": ["api", "model"],
+      "meceRequired": false,
+      "description": "フィーチャーはAPIまたはモデルに分解される"
+    },
+    "api": {
+      "allowedChildren": ["implementation"],
+      "meceRequired": true,
+      "description": "API仕様は実装要求に分解される"
+    },
+    "model": {
+      "allowedChildren": ["implementation"],
+      "meceRequired": true,
+      "description": "モデル仕様は実装要求に分解される"
+    },
+    "implementation": {
+      "allowedChildren": [],
+      "meceRequired": false,
+      "description": "実装要求は最下層"
+    }
+  },
+  "granularityRules": {
+    "user_story": {
+      "descriptionLength": {
+        "min": 50,
+        "max": 300,
+        "recommended": 150
+      },
+      "titleLength": {
+        "min": 15,
+        "max": 80,
+        "recommended": 40
+      },
+      "abstractionScore": {
+        "min": 0.7,
+        "max": 1.0,
+        "recommended": 0.85
+      }
+    },
+    "feature": {
+      "descriptionLength": {
+        "min": 100,
+        "max": 500,
+        "recommended": 250
+      },
+      "titleLength": {
+        "min": 20,
+        "max": 100,
+        "recommended": 50
+      },
+      "abstractionScore": {
+        "min": 0.5,
+        "max": 0.8,
+        "recommended": 0.65
+      }
+    },
+    "api": {
+      "descriptionLength": {
+        "min": 150,
+        "max": 800,
+        "recommended": 400
+      },
+      "titleLength": {
+        "min": 25,
+        "max": 120,
+        "recommended": 60
+      },
+      "abstractionScore": {
+        "min": 0.2,
+        "max": 0.5,
+        "recommended": 0.35
+      }
+    },
+    "model": {
+      "descriptionLength": {
+        "min": 150,
+        "max": 800,
+        "recommended": 400
+      },
+      "titleLength": {
+        "min": 25,
+        "max": 120,
+        "recommended": 60
+      },
+      "abstractionScore": {
+        "min": 0.2,
+        "max": 0.5,
+        "recommended": 0.35
+      }
+    },
+    "implementation": {
+      "descriptionLength": {
+        "min": 200,
+        "max": 1000,
+        "recommended": 500
+      },
+      "titleLength": {
+        "min": 30,
+        "max": 150,
+        "recommended": 70
+      },
+      "abstractionScore": {
+        "min": 0.0,
+        "max": 0.3,
+        "recommended": 0.15
+      }
+    }
+  },
+  "validationRules": {
+    "global": {
+      "maxDepth": 12,
+      "allowCycles": false,
+      "requireUniqueIds": true
+    },
+    "byStage": {
+      "user_story": {
+        "requiredFields": ["title", "description", "priority"],
+        "optionalFields": ["author", "tags", "acceptance_criteria", "business_value"],
+        "forbiddenFields": ["implementation_hints", "api_specification", "model_architecture"]
+      },
+      "feature": {
+        "requiredFields": ["title", "description", "priority", "category"],
+        "optionalFields": ["rationale", "author", "tags", "non_functional_requirements"],
+        "forbiddenFields": ["implementation_hints"]
+      },
+      "api": {
+        "requiredFields": ["title", "description", "priority", "category"],
+        "optionalFields": ["rationale", "author", "tags", "api_specification", "authentication", "rate_limits"],
+        "forbiddenFields": []
+      },
+      "model": {
+        "requiredFields": ["title", "description", "priority", "category"],
+        "optionalFields": ["rationale", "author", "tags", "model_architecture", "training_data", "evaluation_metrics"],
+        "forbiddenFields": []
+      },
+      "implementation": {
+        "requiredFields": ["title", "description", "priority", "category"],
+        "optionalFields": ["rationale", "author", "tags", "implementation_hints", "code_location", "dependencies"],
+        "forbiddenFields": []
+      }
+    }
+  },
+  "metadata": {
+    "author": "requirements-mcp-server",
+    "createdAt": "2025-10-21",
+    "description": "Ontology for Web and AI system development with flexible branching"
+  }
+}

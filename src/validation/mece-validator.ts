@@ -8,6 +8,7 @@ import type {
   ValidationViolation,
   ValidationRule,
 } from '../types.js';
+import type { OntologyManager } from '../ontology/index.js';
 
 /**
  * 簡易的なテキスト類似度計算（コサイン類似度の代替）
@@ -234,6 +235,15 @@ export class AbstractionValidator {
  * MECEバリデーター（ドメインD）
  */
 export class MECEValidator {
+  private static ontologyManager?: OntologyManager;
+
+  /**
+   * Set the ontology manager for MECE validation
+   */
+  static setOntologyManager(manager: OntologyManager) {
+    MECEValidator.ontologyManager = manager;
+  }
+
   /**
    * D1: 兄弟要求間の重複検出
    */
@@ -303,6 +313,14 @@ export class MECEValidator {
 
     if (children.length === 0) {
       return violations; // 子がいない場合はスキップ
+    }
+
+    // Check if MECE is required for this stage from ontology
+    if (MECEValidator.ontologyManager && req.type) {
+      const meceRequired = MECEValidator.ontologyManager.isMeceRequired(req.type);
+      if (!meceRequired) {
+        return violations; // MECE not required for this stage, skip
+      }
     }
 
     // 親のキーワードが子要求群でカバーされているかチェック（簡易実装）

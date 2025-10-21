@@ -1,0 +1,186 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Embedded System Requirements Ontology",
+  "description": "Ontology for embedded system development (Mission → Capability → Subsystem → Component)",
+  "version": "1.0.0",
+  "stages": [
+    {
+      "id": "mission",
+      "name": "ミッション要求",
+      "description": "システムが達成すべきミッション・目的",
+      "level": 1,
+      "abstractionLevel": "high",
+      "canHaveChildren": true,
+      "canHaveParent": false,
+      "parentStages": [],
+      "childStages": ["capability"],
+      "color": "#9C27B0",
+      "icon": "🎯"
+    },
+    {
+      "id": "capability",
+      "name": "能力要求",
+      "description": "システムが提供すべき能力・機能",
+      "level": 2,
+      "abstractionLevel": "medium",
+      "canHaveChildren": true,
+      "canHaveParent": true,
+      "parentStages": ["mission"],
+      "childStages": ["subsystem"],
+      "color": "#3F51B5",
+      "icon": "⚡"
+    },
+    {
+      "id": "subsystem",
+      "name": "サブシステム要求",
+      "description": "サブシステムレベルの要求",
+      "level": 3,
+      "abstractionLevel": "medium",
+      "canHaveChildren": true,
+      "canHaveParent": true,
+      "parentStages": ["capability"],
+      "childStages": ["component"],
+      "color": "#FF5722",
+      "icon": "📦"
+    },
+    {
+      "id": "component",
+      "name": "コンポーネント要求",
+      "description": "個別コンポーネントレベルの要求",
+      "level": 4,
+      "abstractionLevel": "low",
+      "canHaveChildren": false,
+      "canHaveParent": true,
+      "parentStages": ["subsystem"],
+      "childStages": [],
+      "color": "#795548",
+      "icon": "🔩"
+    }
+  ],
+  "derivationRules": {
+    "mission": {
+      "allowedChildren": ["capability"],
+      "meceRequired": true,
+      "description": "ミッション要求は能力要求に詳細化される"
+    },
+    "capability": {
+      "allowedChildren": ["subsystem"],
+      "meceRequired": true,
+      "description": "能力要求はサブシステム要求に詳細化される"
+    },
+    "subsystem": {
+      "allowedChildren": ["component"],
+      "meceRequired": true,
+      "description": "サブシステム要求はコンポーネント要求に詳細化される"
+    },
+    "component": {
+      "allowedChildren": [],
+      "meceRequired": false,
+      "description": "コンポーネント要求は最下層"
+    }
+  },
+  "granularityRules": {
+    "mission": {
+      "descriptionLength": {
+        "min": 100,
+        "max": 500,
+        "recommended": 250
+      },
+      "titleLength": {
+        "min": 20,
+        "max": 100,
+        "recommended": 50
+      },
+      "abstractionScore": {
+        "min": 0.7,
+        "max": 1.0,
+        "recommended": 0.85
+      }
+    },
+    "capability": {
+      "descriptionLength": {
+        "min": 150,
+        "max": 600,
+        "recommended": 300
+      },
+      "titleLength": {
+        "min": 25,
+        "max": 120,
+        "recommended": 60
+      },
+      "abstractionScore": {
+        "min": 0.5,
+        "max": 0.8,
+        "recommended": 0.65
+      }
+    },
+    "subsystem": {
+      "descriptionLength": {
+        "min": 200,
+        "max": 800,
+        "recommended": 400
+      },
+      "titleLength": {
+        "min": 30,
+        "max": 150,
+        "recommended": 70
+      },
+      "abstractionScore": {
+        "min": 0.3,
+        "max": 0.6,
+        "recommended": 0.45
+      }
+    },
+    "component": {
+      "descriptionLength": {
+        "min": 250,
+        "max": 1000,
+        "recommended": 500
+      },
+      "titleLength": {
+        "min": 35,
+        "max": 180,
+        "recommended": 80
+      },
+      "abstractionScore": {
+        "min": 0.0,
+        "max": 0.4,
+        "recommended": 0.2
+      }
+    }
+  },
+  "validationRules": {
+    "global": {
+      "maxDepth": 15,
+      "allowCycles": false,
+      "requireUniqueIds": true
+    },
+    "byStage": {
+      "mission": {
+        "requiredFields": ["title", "description", "rationale", "priority"],
+        "optionalFields": ["author", "tags", "acceptance_criteria"],
+        "forbiddenFields": ["implementation_hints", "hardware_constraints"]
+      },
+      "capability": {
+        "requiredFields": ["title", "description", "priority"],
+        "optionalFields": ["rationale", "author", "tags", "performance_requirements"],
+        "forbiddenFields": ["implementation_hints"]
+      },
+      "subsystem": {
+        "requiredFields": ["title", "description", "priority", "category"],
+        "optionalFields": ["rationale", "author", "tags", "interface_specification", "constraints"],
+        "forbiddenFields": []
+      },
+      "component": {
+        "requiredFields": ["title", "description", "priority", "category"],
+        "optionalFields": ["rationale", "author", "tags", "implementation_hints", "hardware_constraints", "timing_requirements"],
+        "forbiddenFields": []
+      }
+    }
+  },
+  "metadata": {
+    "author": "requirements-mcp-server",
+    "createdAt": "2025-10-21",
+    "description": "Ontology for embedded system development with 4-level hierarchy"
+  }
+}
