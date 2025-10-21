@@ -4,7 +4,7 @@ description: エラーゼロ/警告削減/合格率向上を「自動検証×自
 theme: jekyll-theme-cayman
 show_downloads: true
 github:
-  repository_url: https://github.com/yourusername/requirements-mcp-server
+  repository_url: https://github.com/sawadari/requirements-mcp-server
 
 # Google Analytics (optional)
 # google_analytics: UA-XXXXXXXXX-X
@@ -32,4 +32,4 @@ navigation:
   - title: Principles
     url: ../REQUIREMENTS-PRINCIPLES.md
   - title: GitHub
-    url: https://github.com/yourusername/requirements-mcp-server
+    url: https://github.com/sawadari/requirements-mcp-server

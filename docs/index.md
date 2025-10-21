@@ -162,7 +162,7 @@ CLIからでも、Claude Code等のエディタ連携からでも同じ**検証�
 
 ```bash
 # リポジトリをクローン
-git clone https://github.com/yourusername/requirements-mcp-server.git
+git clone https://github.com/sawadari/requirements-mcp-server.git
 cd requirements-mcp-server
 
 # 依存関係をインストール
@@ -319,16 +319,16 @@ npm start
 
 ### 始めるための3ステップ
 
-1. **[GitHubからクローン](https://github.com/yourusername/requirements-mcp-server)**
+1. **[GitHubからクローン](https://github.com/sawadari/requirements-mcp-server)**
 2. **`npm install && npm run build`**
 3. **`npx tsx validate-requirements.ts`**
 
-[今すぐ始める](#はじめ方) ・ [GitHubで見る](https://github.com/yourusername/requirements-mcp-server)
+[今すぐ始める](#はじめ方) ・ [GitHubで見る](https://github.com/sawadari/requirements-mcp-server)
 
 ---
 
 <div style="text-align: center; padding: 2rem; background: #f5f5f5; margin-top: 3rem;">
   <h3>要求の品質を、機械的に、確実に。</h3>
   <p>requirements-mcp-server</p>
-  <p><a href="https://github.com/yourusername/requirements-mcp-server">GitHub</a> | <a href="../README.md">ドキュメント</a> | <a href="../ONTOLOGY-GUIDE.md">オントロジーガイド</a></p>
+  <p><a href="https://github.com/sawadari/requirements-mcp-server">GitHub</a> | <a href="../README.md">ドキュメント</a> | <a href="../ONTOLOGY-GUIDE.md">オントロジーガイド</a></p>
 </div>
