@@ -1,0 +1,35 @@
+# GitHub Pages Configuration
+title: 要求管理MCPサーバー
+description: エラーゼロ/警告削減/合格率向上を「自動検証×自動修正×原則ベース」で実現
+theme: jekyll-theme-cayman
+show_downloads: true
+github:
+  repository_url: https://github.com/yourusername/requirements-mcp-server
+
+# Google Analytics (optional)
+# google_analytics: UA-XXXXXXXXX-X
+
+# Plugins
+plugins:
+  - jekyll-relative-links
+  - jekyll-seo-tag
+
+# Markdown settings
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+  syntax_highlighter: rouge
+
+# Navigation
+navigation:
+  - title: Home
+    url: /
+  - title: Documentation
+    url: ../README.md
+  - title: Ontology Guide
+    url: ../ONTOLOGY-GUIDE.md
+  - title: Principles
+    url: ../REQUIREMENTS-PRINCIPLES.md
+  - title: GitHub
+    url: https://github.com/yourusername/requirements-mcp-server

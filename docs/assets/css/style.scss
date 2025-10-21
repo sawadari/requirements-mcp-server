@@ -1,0 +1,274 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+/* Custom Styles for Requirements MCP Server Landing Page */
+
+/* Hero Section */
+.page-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 3rem 1rem;
+}
+
+h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #ffffff;
+}
+
+/* Badges and Stats */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.stat-card {
+  background: #f8f9fa;
+  border-left: 4px solid #667eea;
+  padding: 1rem;
+  border-radius: 4px;
+}
+
+.stat-card h3 {
+  font-size: 2rem;
+  margin: 0;
+  color: #667eea;
+}
+
+.stat-card p {
+  margin: 0.5rem 0 0 0;
+  color: #6c757d;
+}
+
+/* Feature Cards */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin: 2rem 0;
+}
+
+.feature-card {
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.feature-card h3 {
+  color: #667eea;
+  margin-top: 0;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+table thead {
+  background: #667eea;
+  color: #ffffff;
+}
+
+table th,
+table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e9ecef;
+}
+
+table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+/* Code Blocks */
+pre {
+  background: #2d3748;
+  border-radius: 8px;
+  padding: 1.5rem;
+  overflow-x: auto;
+}
+
+code {
+  background: #f8f9fa;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+pre code {
+  background: transparent;
+  padding: 0;
+}
+
+/* Buttons and CTAs */
+.cta-button {
+  display: inline-block;
+  background: #667eea;
+  color: #ffffff;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.2s;
+  margin: 0.5rem;
+}
+
+.cta-button:hover {
+  background: #764ba2;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.cta-button-secondary {
+  background: transparent;
+  border: 2px solid #667eea;
+  color: #667eea;
+}
+
+.cta-button-secondary:hover {
+  background: #667eea;
+  color: #ffffff;
+}
+
+/* Sections */
+section {
+  margin: 3rem 0;
+}
+
+section h2 {
+  border-bottom: 3px solid #667eea;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+  color: #2d3748;
+}
+
+section h3 {
+  color: #667eea;
+  margin-top: 2rem;
+}
+
+/* FAQ Section */
+.faq-item {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.faq-item h3 {
+  margin-top: 0;
+  color: #2d3748;
+}
+
+/* Footer CTA */
+.footer-cta {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  border-radius: 8px;
+  margin-top: 3rem;
+}
+
+.footer-cta h3 {
+  color: #ffffff;
+  margin-top: 0;
+}
+
+.footer-cta a {
+  color: #ffffff;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+/* Icons and Emojis */
+.icon {
+  font-size: 2rem;
+  margin-right: 0.5rem;
+}
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+  h1 {
+    font-size: 1.8rem;
+  }
+
+  .stats-grid,
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  table {
+    font-size: 0.9rem;
+  }
+}
+
+/* Highlights */
+.highlight-box {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  padding: 1rem;
+  margin: 1.5rem 0;
+  border-radius: 4px;
+}
+
+.success-box {
+  background: #d4edda;
+  border-left: 4px solid #28a745;
+  padding: 1rem;
+  margin: 1.5rem 0;
+  border-radius: 4px;
+}
+
+.info-box {
+  background: #d1ecf1;
+  border-left: 4px solid #17a2b8;
+  padding: 1rem;
+  margin: 1.5rem 0;
+  border-radius: 4px;
+}
+
+/* Blockquotes */
+blockquote {
+  border-left: 4px solid #667eea;
+  padding-left: 1rem;
+  margin-left: 0;
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Lists */
+ul, ol {
+  padding-left: 2rem;
+}
+
+li {
+  margin: 0.5rem 0;
+}
+
+/* Links */
+a {
+  color: #667eea;
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: #764ba2;
+}
