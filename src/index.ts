@@ -25,8 +25,12 @@ import { FixExecutor } from './fix-engine/fix-executor.js';
 import { ChangeEngine } from './fix-engine/change-engine.js';
 import type { FixPolicy, ChangeSet } from './fix-engine/types.js';
 import { toRequirementRecord } from './fix-engine/types.js';
+import { createLogger } from './common/logger.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+
+// ロガー初期化
+const logger = createLogger('MCP-Server');
 
 // Zodスキーマの定義
 const AddRequirementSchema = z.object({
@@ -144,19 +148,19 @@ class RequirementsMCPServer {
     // ValidationEngineを非同期で初期化
     ValidationEngine.create().then(engine => {
       this.validationEngine = engine;
-      console.error('ValidationEngine initialized');
+      logger.info('ValidationEngine initialized');
     }).catch(error => {
-      console.error('Failed to initialize ValidationEngine:', error);
+      logger.error('Failed to initialize ValidationEngine', error);
     });
 
     // ビュー自動更新コールバックを設定
     this.storage.setViewUpdateCallback(async () => {
       try {
-        console.error('Updating views automatically...');
+        logger.debug('Updating views automatically');
         await this.viewExporter.exportAllViews('./views');
-        console.error('Views updated successfully');
+        logger.debug('Views updated successfully');
       } catch (error) {
-        console.error('Failed to update views:', error);
+        logger.error('Failed to update views', error instanceof Error ? error : new Error(String(error)));
       }
     });
 
@@ -1107,13 +1111,16 @@ class RequirementsMCPServer {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
 
-    console.error('Requirements MCP Server running on stdio');
+    logger.info('Requirements MCP Server running on stdio', {
+      version: '1.0.0',
+      capabilities: ['tools'],
+    });
   }
 }
 
 // サーバー起動
 const server = new RequirementsMCPServer();
 server.start().catch((error) => {
-  console.error('Failed to start server:', error);
+  logger.error('Failed to start server', error instanceof Error ? error : new Error(String(error)));
   process.exit(1);
 });
