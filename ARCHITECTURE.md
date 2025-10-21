@@ -4,6 +4,8 @@
 
 requirements-mcp-serverは、Model Context Protocol (MCP)を使用した要求管理システムです。レイヤードアーキテクチャを採用し、関心の分離と保守性を実現しています。
 
+本システムは [REQUIREMENTS-PRINCIPLES.md](./REQUIREMENTS-PRINCIPLES.md) で定義された要求管理の要諦に基づいて設計されています。
+
 ## アーキテクチャ図
 
 ```
@@ -209,7 +211,55 @@ ValidationEngine (validation-engine.ts)
 8. Response → Claude Code
 ```
 
-## 設計原則
+## 要求管理の基本原則
+
+本システムは [REQUIREMENTS-PRINCIPLES.md](./REQUIREMENTS-PRINCIPLES.md) で定義された要諦に基づいています。
+
+### オントロジー
+
+要求は以下の段階を経て詳細化されます：
+- **ステークホルダ要求**: システムを利用するステークホルダのニーズ
+- **システム要求**: システムをブラックボックスとしてみたときの要求
+- **システム機能要求**: システムをホワイトボックスとしてみたときの要求
+
+**MECE原則**: 親子関係において、下位要求は互いに重複せず、上位要求を完全にカバーする
+
+**粒度の一貫性**: 同一段階内の要求は、文章の長さと抽象度が揃っている
+
+### セマンティクス
+
+- **要求の構成**: 主題（title）・説明（description）・理由（rationale）・属性（metadata）
+- **段階別カスタマイズ**: 各段階に応じた属性セット（実装予定: Issue #16）
+
+### 妥当性
+
+- **構造的妥当性**: オントロジーへの適合（StructureValidator, MECEValidator）
+- **意味的整合性**: 連続性・整合性・論理性（LLMEvaluator - 実装予定: Issue #13）
+
+### ツール的側面
+
+- **影響分析**: ImpactAnalyzerによる依存関係の追跡
+- **自動修正**: Fix Engineによる整合性の自動維持
+- **トレーサビリティ**: OperationLoggerによる変更履歴の記録
+
+### 原則の実装マッピング
+
+| 原則 | 実装コンポーネント | ファイル | 状態 |
+|------|-------------------|----------|------|
+| 段階的詳細化 | Requirement.type | src/types.ts | ✅ 実装済み |
+| MECE原則 | MECEValidator | src/validation/mece-validator.ts | ✅ 実装済み |
+| 粒度の一貫性 | GranularityValidator | src/validation/granularity-validator.ts | ⏳ Issue #17 |
+| 影響分析 | ImpactAnalyzer | src/analyzer.ts | ✅ 実装済み |
+| 自動修正 | Fix Engine | src/fix-engine/ | ✅ 実装済み |
+| トレーサビリティ | OperationLogger | src/operation-logger.ts | ✅ 実装済み |
+| オントロジー可変性 | OntologyManager | src/ontology/ | ⏳ Issue #15 |
+| セマンティクス可変性 | SemanticsManager | src/semantics/ | ⏳ Issue #16 |
+
+詳細は [REQUIREMENTS-PRINCIPLES.md](./REQUIREMENTS-PRINCIPLES.md) および [PRINCIPLES-COMPLIANCE-ANALYSIS.md](./PRINCIPLES-COMPLIANCE-ANALYSIS.md) を参照。
+
+---
+
+## アーキテクチャ設計原則
 
 ### 1. 関心の分離 (Separation of Concerns)
 

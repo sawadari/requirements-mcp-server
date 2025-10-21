@@ -373,7 +373,7 @@ ${columns.map((col) => `        <th>${this.getColumnLabel(col)}</th>`).join('\n'
    * 値をフォーマット
    */
   private formatValue(req: Requirement, column: string): string {
-    const value = (req as any)[column];
+    const value = req[column as keyof Requirement];
 
     if (value === undefined || value === null) {
       return '';

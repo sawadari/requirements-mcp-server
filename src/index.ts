@@ -24,7 +24,7 @@ import { NLPAnalyzer } from './validation/nlp-analyzer.js';
 import { FixExecutor } from './fix-engine/fix-executor.js';
 import { ChangeEngine } from './fix-engine/change-engine.js';
 import type { FixPolicy, ChangeSet } from './fix-engine/types.js';
-import { toRequirementRecord } from './fix-engine/types.js';
+import { toRequirementRecord, toFixEngineRequirements, toStorageRequirement } from './fix-engine/types.js';
 import { createLogger } from './common/logger.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -919,7 +919,8 @@ class RequirementsMCPServer {
 
     // プレビューを生成
     const requirements = await this.storage.getAllRequirements();
-    const reqRecord = toRequirementRecord(requirements as any);
+    const fixEngineReqs = toFixEngineRequirements(requirements);
+    const reqRecord = toRequirementRecord(fixEngineReqs);
     const preview = this.changeEngine.preview(changeSet, reqRecord);
 
     return {
@@ -971,7 +972,8 @@ class RequirementsMCPServer {
 
     // 要求を取得
     const requirements = await this.storage.getAllRequirements();
-    const reqRecord = toRequirementRecord(requirements as any);
+    const fixEngineReqs = toFixEngineRequirements(requirements);
+    const reqRecord = toRequirementRecord(fixEngineReqs);
 
     // 適用
     const result = await this.changeEngine.apply(changeSet, reqRecord);
@@ -991,7 +993,8 @@ class RequirementsMCPServer {
 
     // ストレージを更新
     for (const [id, req] of Object.entries(result.modified)) {
-      await this.storage.updateRequirement(id, req as any);
+      const storageReq = toStorageRequirement(req);
+      await this.storage.updateRequirement(id, storageReq);
     }
 
     // ChangeSetを更新
@@ -1063,7 +1066,8 @@ class RequirementsMCPServer {
 
     // 要求を取得
     const requirements = await this.storage.getAllRequirements();
-    const reqRecord = toRequirementRecord(requirements as any);
+    const fixEngineReqs = toFixEngineRequirements(requirements);
+    const reqRecord = toRequirementRecord(fixEngineReqs);
 
     // ロールバック
     const result = await this.changeEngine.rollback(changeSet, reqRecord);
@@ -1082,7 +1086,8 @@ class RequirementsMCPServer {
 
     // ストレージを更新
     for (const [id, req] of Object.entries(result.restored)) {
-      await this.storage.updateRequirement(id, req as any);
+      const storageReq = toStorageRequirement(req);
+      await this.storage.updateRequirement(id, storageReq);
     }
 
     // ChangeSetを更新

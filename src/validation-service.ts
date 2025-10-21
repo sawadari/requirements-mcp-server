@@ -276,10 +276,25 @@ export class ValidationService {
           // 型変換: FixEngine.Requirement -> Requirement
           const reqsMap = new Map<string, Requirement>();
           for (const [id, req] of Object.entries(reqs)) {
+            const createdAt = typeof req.createdAt === 'string' ? new Date(req.createdAt) : new Date(req.createdAt || Date.now());
+            const updatedAt = typeof req.updatedAt === 'string' ? new Date(req.updatedAt) : new Date(req.updatedAt || Date.now());
             reqsMap.set(id, {
-              ...req as any,
-              createdAt: new Date(req.createdAt || Date.now()),
-              updatedAt: new Date(req.updatedAt || Date.now()),
+              id: req.id,
+              title: req.title,
+              description: req.description,
+              status: req.status as any, // Fix Engine uses string, Storage uses RequirementStatus
+              priority: req.priority as any,
+              category: req.category,
+              type: req.type as any,
+              tags: req.tags || [],
+              dependencies: req.depends_on || [],
+              refines: req.refines,
+              depends_on: req.depends_on,
+              createdAt,
+              updatedAt,
+              author: req.author,
+              assignee: req.assignee,
+              rationale: req.rationale,
             });
           }
 
@@ -295,10 +310,25 @@ export class ValidationService {
         // 型変換: FixEngine.Requirement -> Requirement
         const convertedReqs = new Map<string, Requirement>();
         for (const [id, req] of Object.entries(fixResult.requirements || {})) {
+          const createdAt = typeof req.createdAt === 'string' ? new Date(req.createdAt) : new Date(req.createdAt || Date.now());
+          const updatedAt = typeof req.updatedAt === 'string' ? new Date(req.updatedAt) : new Date(req.updatedAt || Date.now());
           convertedReqs.set(id, {
-            ...req as any,
-            createdAt: new Date((req as any).createdAt || Date.now()),
-            updatedAt: new Date((req as any).updatedAt || Date.now()),
+            id: req.id,
+            title: req.title,
+            description: req.description,
+            status: req.status as any,
+            priority: req.priority as any,
+            category: req.category,
+            type: req.type as any,
+            tags: req.tags || [],
+            dependencies: req.depends_on || [],
+            refines: req.refines,
+            depends_on: req.depends_on,
+            createdAt,
+            updatedAt,
+            author: req.author,
+            assignee: req.assignee,
+            rationale: req.rationale,
           });
         }
         currentRequirements = convertedReqs;
