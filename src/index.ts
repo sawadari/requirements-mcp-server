@@ -24,6 +24,7 @@ import { NLPAnalyzer } from './validation/nlp-analyzer.js';
 import { FixExecutor } from './fix-engine/fix-executor.js';
 import { ChangeEngine } from './fix-engine/change-engine.js';
 import type { FixPolicy, ChangeSet } from './fix-engine/types.js';
+import { toRequirementRecord } from './fix-engine/types.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -914,7 +915,7 @@ class RequirementsMCPServer {
 
     // プレビューを生成
     const requirements = await this.storage.getAllRequirements();
-    const reqRecord = Object.fromEntries(requirements.map((r: Requirement) => [r.id, r as any]));
+    const reqRecord = toRequirementRecord(requirements as any);
     const preview = this.changeEngine.preview(changeSet, reqRecord);
 
     return {
@@ -966,7 +967,7 @@ class RequirementsMCPServer {
 
     // 要求を取得
     const requirements = await this.storage.getAllRequirements();
-    const reqRecord = Object.fromEntries(requirements.map((r: Requirement) => [r.id, r as any]));
+    const reqRecord = toRequirementRecord(requirements as any);
 
     // 適用
     const result = await this.changeEngine.apply(changeSet, reqRecord);
@@ -1058,7 +1059,7 @@ class RequirementsMCPServer {
 
     // 要求を取得
     const requirements = await this.storage.getAllRequirements();
-    const reqRecord = Object.fromEntries(requirements.map((r: Requirement) => [r.id, r as any]));
+    const reqRecord = toRequirementRecord(requirements as any);
 
     // ロールバック
     const result = await this.changeEngine.rollback(changeSet, reqRecord);

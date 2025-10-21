@@ -252,3 +252,30 @@ export interface FixResult {
   error?: string;
   requirements?: Record<ReqID, Requirement>;
 }
+
+/**
+ * 要求のレコード型（ID → Requirement のマッピング）
+ */
+export type RequirementRecord = Record<ReqID, Requirement>;
+
+/**
+ * 要求の配列をレコードに変換
+ *
+ * @param requirements - 要求の配列
+ * @returns 要求のレコード
+ */
+export function toRequirementRecord(requirements: Requirement[]): RequirementRecord {
+  return Object.fromEntries(
+    requirements.map(r => [r.id, r])
+  ) as RequirementRecord;
+}
+
+/**
+ * 要求のレコードを配列に変換
+ *
+ * @param record - 要求のレコード
+ * @returns 要求の配列
+ */
+export function fromRequirementRecord(record: RequirementRecord): Requirement[] {
+  return Object.values(record);
+}
