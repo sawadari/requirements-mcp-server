@@ -3,19 +3,35 @@
 
 @import "{{ site.theme }}";
 
-/* Custom Styles for Requirements MCP Server Landing Page */
+/* OpenAI-inspired Simple Black & White Design */
+
+/* Color Variables */
+$color-black: #000000;
+$color-dark-gray: #1a1a1a;
+$color-medium-gray: #6e6e6e;
+$color-light-gray: #e5e5e5;
+$color-white: #ffffff;
+$color-border: #d9d9d9;
 
 /* Hero Section */
 .page-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: $color-white;
+  border-bottom: 1px solid $color-border;
   padding: 3rem 1rem;
+  color: $color-black;
 }
 
 h1 {
   font-size: 2.5rem;
-  font-weight: 700;
+  font-weight: 600;
   margin-bottom: 1rem;
-  color: #ffffff;
+  color: $color-black;
+  letter-spacing: -0.02em;
+}
+
+.page-header .project-tagline {
+  color: $color-medium-gray;
+  font-weight: 400;
 }
 
 /* Badges and Stats */
@@ -27,8 +43,9 @@ h1 {
 }
 
 .stat-card {
-  background: #f8f9fa;
-  border-left: 4px solid #667eea;
+  background: $color-white;
+  border: 1px solid $color-border;
+  border-left: 3px solid $color-black;
   padding: 1rem;
   border-radius: 4px;
 }
@@ -36,12 +53,14 @@ h1 {
 .stat-card h3 {
   font-size: 2rem;
   margin: 0;
-  color: #667eea;
+  color: $color-black;
+  font-weight: 600;
 }
 
 .stat-card p {
   margin: 0.5rem 0 0 0;
-  color: #6c757d;
+  color: $color-medium-gray;
+  font-size: 0.9rem;
 }
 
 /* Feature Cards */
@@ -53,22 +72,28 @@ h1 {
 }
 
 .feature-card {
-  background: #ffffff;
-  border: 1px solid #e9ecef;
+  background: $color-white;
+  border: 1px solid $color-border;
   border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .feature-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .feature-card h3 {
-  color: #667eea;
+  color: $color-black;
   margin-top: 0;
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.feature-card p {
+  color: $color-medium-gray;
+  line-height: 1.6;
 }
 
 /* Tables */
@@ -76,74 +101,79 @@ table {
   width: 100%;
   border-collapse: collapse;
   margin: 1.5rem 0;
-  background: #ffffff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: $color-white;
+  border: 1px solid $color-border;
 }
 
 table thead {
-  background: #667eea;
-  color: #ffffff;
+  background: $color-black;
+  color: $color-white;
 }
 
 table th,
 table td {
   padding: 0.75rem;
   text-align: left;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid $color-border;
 }
 
 table tbody tr:hover {
-  background: #f8f9fa;
+  background: #f8f8f8;
 }
 
 /* Code Blocks */
 pre {
-  background: #2d3748;
+  background: $color-dark-gray;
   border-radius: 8px;
   padding: 1.5rem;
   overflow-x: auto;
+  border: 1px solid $color-black;
 }
 
 code {
-  background: #f8f9fa;
+  background: $color-light-gray;
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
   font-size: 0.9em;
+  color: $color-dark-gray;
 }
 
 pre code {
   background: transparent;
   padding: 0;
+  color: $color-white;
 }
 
 /* Buttons and CTAs */
 .cta-button {
   display: inline-block;
-  background: #667eea;
-  color: #ffffff;
+  background: $color-black;
+  color: $color-white;
   padding: 0.75rem 1.5rem;
-  border-radius: 4px;
+  border-radius: 6px;
   text-decoration: none;
   font-weight: 600;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.2s;
   margin: 0.5rem;
+  border: 2px solid $color-black;
 }
 
 .cta-button:hover {
-  background: #764ba2;
-  color: #ffffff;
+  background: $color-dark-gray;
+  color: $color-white;
   text-decoration: none;
+  transform: translateY(-1px);
 }
 
 .cta-button-secondary {
-  background: transparent;
-  border: 2px solid #667eea;
-  color: #667eea;
+  background: $color-white;
+  border: 2px solid $color-black;
+  color: $color-black;
 }
 
 .cta-button-secondary:hover {
-  background: #667eea;
-  color: #ffffff;
+  background: $color-black;
+  color: $color-white;
 }
 
 /* Sections */
@@ -152,50 +182,65 @@ section {
 }
 
 section h2 {
-  border-bottom: 3px solid #667eea;
+  border-bottom: 2px solid $color-black;
   padding-bottom: 0.5rem;
   margin-bottom: 1.5rem;
-  color: #2d3748;
+  color: $color-black;
+  font-weight: 600;
+  font-size: 1.8rem;
 }
 
 section h3 {
-  color: #667eea;
+  color: $color-black;
   margin-top: 2rem;
+  font-weight: 600;
+  font-size: 1.4rem;
 }
 
 /* FAQ Section */
 .faq-item {
   margin-bottom: 2rem;
   padding: 1rem;
-  background: #f8f9fa;
+  background: $color-white;
   border-radius: 8px;
-  border-left: 4px solid #667eea;
+  border-left: 3px solid $color-black;
+  border: 1px solid $color-border;
 }
 
 .faq-item h3 {
   margin-top: 0;
-  color: #2d3748;
+  color: $color-black;
+  font-size: 1.1rem;
+}
+
+.faq-item p {
+  color: $color-medium-gray;
+  line-height: 1.6;
 }
 
 /* Footer CTA */
 .footer-cta {
   text-align: center;
   padding: 3rem 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #ffffff;
+  background: $color-black;
+  color: $color-white;
   border-radius: 8px;
   margin-top: 3rem;
 }
 
 .footer-cta h3 {
-  color: #ffffff;
+  color: $color-white;
   margin-top: 0;
 }
 
 .footer-cta a {
-  color: #ffffff;
+  color: $color-white;
   text-decoration: underline;
   font-weight: 600;
+}
+
+.footer-cta a:hover {
+  text-decoration: none;
 }
 
 /* Icons and Emojis */
@@ -222,24 +267,24 @@ section h3 {
 
 /* Highlights */
 .highlight-box {
-  background: #fff3cd;
-  border-left: 4px solid #ffc107;
+  background: $color-light-gray;
+  border-left: 4px solid $color-medium-gray;
   padding: 1rem;
   margin: 1.5rem 0;
   border-radius: 4px;
 }
 
 .success-box {
-  background: #d4edda;
-  border-left: 4px solid #28a745;
+  background: $color-light-gray;
+  border-left: 4px solid $color-black;
   padding: 1rem;
   margin: 1.5rem 0;
   border-radius: 4px;
 }
 
 .info-box {
-  background: #d1ecf1;
-  border-left: 4px solid #17a2b8;
+  background: $color-light-gray;
+  border-left: 4px solid $color-medium-gray;
   padding: 1rem;
   margin: 1.5rem 0;
   border-radius: 4px;
@@ -247,10 +292,10 @@ section h3 {
 
 /* Blockquotes */
 blockquote {
-  border-left: 4px solid #667eea;
+  border-left: 4px solid $color-black;
   padding-left: 1rem;
   margin-left: 0;
-  color: #6c757d;
+  color: $color-medium-gray;
   font-style: italic;
 }
 
@@ -261,14 +306,50 @@ ul, ol {
 
 li {
   margin: 0.5rem 0;
+  color: $color-dark-gray;
 }
 
 /* Links */
 a {
-  color: #667eea;
+  color: $color-black;
   transition: color 0.2s;
+  text-decoration: underline;
 }
 
 a:hover {
-  color: #764ba2;
+  color: $color-medium-gray;
+  text-decoration: none;
+}
+
+/* Main content area */
+.main-content {
+  color: $color-dark-gray;
+  line-height: 1.6;
+}
+
+.main-content h1,
+.main-content h2,
+.main-content h3,
+.main-content h4,
+.main-content h5,
+.main-content h6 {
+  color: $color-black;
+  font-weight: 600;
+}
+
+/* Page header buttons */
+.btn {
+  background: $color-black;
+  color: $color-white;
+  border: 2px solid $color-black;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn:hover {
+  background: $color-white;
+  color: $color-black;
+  text-decoration: none;
 }

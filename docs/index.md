@@ -36,7 +36,7 @@ description: エラーゼロ/警告削減/合格率向上を「自動検証×自
 - `refines`関係の正規化
 - オントロジー整合性の回復（`functional` → `system_functional`統一）
 
-> 詳細：[VALIDATION-SUMMARY.md](../VALIDATION-SUMMARY.md)（実施日: 2025-10-21）
+> 詳細：[VALIDATION-SUMMARY.md](https://github.com/sawadari/requirements-mcp-server/blob/main/VALIDATION-SUMMARY.md)（実施日: 2025-10-21）
 
 ### フェーズ2：警告・情報の品質改善（運用/記述品質の底上げ）
 
@@ -56,7 +56,7 @@ description: エラーゼロ/警告削減/合格率向上を「自動検証×自
 
 **合計33件の改善を実施**
 
-> 詳細：[IMPROVEMENT-REPORT.md](../IMPROVEMENT-REPORT.md)（実施日: 2025-10-21）
+> 詳細：[IMPROVEMENT-REPORT.md](https://github.com/sawadari/requirements-mcp-server/blob/main/IMPROVEMENT-REPORT.md)（実施日: 2025-10-21）
 
 ---
 
@@ -90,9 +90,9 @@ description: エラーゼロ/警告削減/合格率向上を「自動検証×自
 **レビュー負荷を削減**しつつ**品質スコア**を押し上げます。
 
 > 参考資料：
-> - [REQUIREMENTS-PRINCIPLES.md](../REQUIREMENTS-PRINCIPLES.md)（要求管理の要諦）
-> - [ONTOLOGY-GUIDE.md](../ONTOLOGY-GUIDE.md)（段階/派生/粒度/検証ルールの外部化）
-> - [PRINCIPLES-COMPLIANCE-ANALYSIS.md](../PRINCIPLES-COMPLIANCE-ANALYSIS.md)（原則と実装の対応、現状ギャップ/改善計画）
+> - [REQUIREMENTS-PRINCIPLES.md](https://github.com/sawadari/requirements-mcp-server/blob/main/REQUIREMENTS-PRINCIPLES.md)（要求管理の要諦）
+> - [ONTOLOGY-GUIDE.md](https://github.com/sawadari/requirements-mcp-server/blob/main/ONTOLOGY-GUIDE.md)（段階/派生/粒度/検証ルールの外部化）
+> - [PRINCIPLES-COMPLIANCE-ANALYSIS.md](https://github.com/sawadari/requirements-mcp-server/blob/main/PRINCIPLES-COMPLIANCE-ANALYSIS.md)（原則と実装の対応、現状ギャップ/改善計画）
 
 ---
 
@@ -124,7 +124,7 @@ CLIからでも、Claude Code等のエディタ連携からでも同じ**検証�
 - **Ontology Manager**（外部スキーマのロード・検証）
 - **Webビューアー**（ツリー/検索/マトリクス/自動更新）
 
-> 参考：[README.md](../README.md)（機能一覧・MCPツール・ビュー・設定サンプル）
+> 参考：[README.md](https://github.com/sawadari/requirements-mcp-server/blob/main/README.md)（機能一覧・MCPツール・ビュー・設定サンプル）
 
 ---
 
@@ -262,7 +262,7 @@ npm run view-server
 **打ち手**: 単一機能に焦点を絞り簡潔化
 **効果**: レビュー効率向上、リグレッション防止
 
-> 例や数値・個票は[validation-report.md](../validation-report.md)に一覧化。
+> 例や数値・個票は[validation-report.md](https://github.com/sawadari/requirements-mcp-server/blob/main/validation-report.md)に一覧化。
 > 「どの要求が」「どの違反に」「どの修正が効いたか」を**追跡可能**です。
 
 ---
@@ -330,5 +330,5 @@ npm start
 <div style="text-align: center; padding: 2rem; background: #f5f5f5; margin-top: 3rem;">
   <h3>要求の品質を、機械的に、確実に。</h3>
   <p>requirements-mcp-server</p>
-  <p><a href="https://github.com/sawadari/requirements-mcp-server">GitHub</a> | <a href="../README.md">ドキュメント</a> | <a href="../ONTOLOGY-GUIDE.md">オントロジーガイド</a></p>
+  <p><a href="https://github.com/sawadari/requirements-mcp-server">GitHub</a> | <a href="https://github.com/sawadari/requirements-mcp-server/blob/main/README.md">ドキュメント</a> | <a href="https://github.com/sawadari/requirements-mcp-server/blob/main/ONTOLOGY-GUIDE.md">オントロジーガイド</a></p>
 </div>
