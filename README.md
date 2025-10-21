@@ -2,6 +2,8 @@
 
 **要求管理MCPサーバー** - Claude Codeとの対話的な要求管理システム
 
+📘 **[プロジェクトランディングページ](https://sawadari.github.io/requirements-mcp-server/)** - 効果実績、アーキテクチャ、はじめ方を詳しく解説
+
 ## 目次
 
 - [概要](#概要)
