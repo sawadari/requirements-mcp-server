@@ -12,11 +12,24 @@ import { OperationLogger } from './operation-logger.js';
 import { RequirementsStorage } from './storage.js';
 import { TreeBuilder } from './tree-view.js';
 import { RequirementValidator } from './validator.js';
+import { ValidationEngine } from './validation/validation-engine.js';
+import { createChatAssistant } from './ai-chat-assistant.js';
 
 const app = express();
 const PORT = 5002;
 const storage = new RequirementsStorage('./data');
 const validator = new RequirementValidator(storage);
+
+// ValidationEngine for AI Chat Assistant
+let validationEngine: ValidationEngine;
+let chatAssistant: ReturnType<typeof createChatAssistant>;
+
+// Initialize ValidationEngine and AI Chat Assistant asynchronously
+(async () => {
+  validationEngine = await ValidationEngine.create();
+  chatAssistant = createChatAssistant(storage, validationEngine);
+  console.log('✅ AI Chat Assistant initialized');
+})();
 
 // CORS有効化
 app.use(cors());
@@ -2325,294 +2338,15 @@ app.get('/api/watch', (req, res) => {
 app.post('/api/chat', express.json(), async (req, res) => {
   try {
     const { message } = req.body;
-    await storage.initialize();
-    await validator.initialize();
 
-    let response = '';
-    const messageLower = message.toLowerCase();
-
-    // 1. 要求の妥当性チェック
-    if (messageLower.includes('妥当性') || messageLower.includes('バリデーション') || messageLower.includes('チェック')) {
-      // 要求IDを抽出
-      const idMatch = message.match(/([A-Z]+-\d+)/i);
-
-      if (idMatch) {
-        const reqId = idMatch[1].toUpperCase();
-        const requirement = await storage.getRequirement(reqId);
-
-        if (requirement) {
-          const report = await validator.validate(reqId);
-
-          if (report.isValid) {
-            response = `✅ **要求 ${reqId} の妥当性チェック結果**\n\n`;
-            response += `**タイトル**: ${requirement.title}\n`;
-            response += `**ステータス**: すべての検証をパスしました\n\n`;
-            response += `📊 検証サマリ:\n`;
-            response += `• エラー: ${report.errorCount}件\n`;
-            response += `• 警告: ${report.warningCount}件\n`;
-            response += `• 情報: ${report.infoCount}件\n`;
-          } else {
-            response = `⚠️ **要求 ${reqId} の妥当性チェック結果**\n\n`;
-            response += `**タイトル**: ${requirement.title}\n`;
-            response += `**ステータス**: 問題が検出されました\n\n`;
-            response += `📊 検証サマリ:\n`;
-            response += `• エラー: ${report.errorCount}件\n`;
-            response += `• 警告: ${report.warningCount}件\n`;
-            response += `• 情報: ${report.infoCount}件\n\n`;
-
-            if (report.errorCount > 0) {
-              response += `🚨 **エラー**:\n`;
-              report.results.filter(r => r.severity === 'error').forEach(r => {
-                response += `• [${r.ruleName}] ${r.message}\n`;
-                if (r.suggestion) response += `  💡 提案: ${r.suggestion}\n`;
-              });
-              response += `\n`;
-            }
-
-            if (report.warningCount > 0) {
-              response += `⚠️ **警告**:\n`;
-              report.results.filter(r => r.severity === 'warning').forEach(r => {
-                response += `• [${r.ruleName}] ${r.message}\n`;
-                if (r.suggestion) response += `  💡 提案: ${r.suggestion}\n`;
-              });
-            }
-          }
-        } else {
-          response = `❌ 要求ID「${reqId}」が見つかりませんでした。\n\n要求IDを確認してください。`;
-        }
-      } else {
-        response = '要求IDを指定してください。\n\n例: 「STK-001の妥当性をチェック」';
-      }
-    }
-
-    // 2. 要求の検索
-    else if (messageLower.includes('検索') || messageLower.includes('探')) {
-      // キーワード抽出（簡易版）
-      const keywords = message.match(/「(.+?)」/);
-      const keyword = keywords ? keywords[1] : '';
-
-      if (keyword) {
-        const allReqs = await storage.getAllRequirements();
-        const results = allReqs.filter(req =>
-          req.title.includes(keyword) ||
-          req.description.includes(keyword) ||
-          (req.rationale && req.rationale.includes(keyword))
-        );
-
-        if (results.length > 0) {
-          response = `🔍 **検索結果**: キーワード「${keyword}」\n\n`;
-          response += `${results.length}件の要求が見つかりました:\n\n`;
-          results.slice(0, 10).forEach(req => {
-            const typeIcon = req.type === 'stakeholder' ? '👥' : req.type === 'system' ? '⚙️' : '🔧';
-            response += `${typeIcon} **${req.id}**: ${req.title}\n`;
-            response += `   📝 ${req.description.substring(0, 60)}...\n`;
-            response += `   🏷️ ${req.category} | 📊 ${req.priority} | ✅ ${req.status}\n\n`;
-          });
-
-          if (results.length > 10) {
-            response += `\n...他${results.length - 10}件`;
-          }
-        } else {
-          response = `🔍 キーワード「${keyword}」に一致する要求が見つかりませんでした。`;
-        }
-      } else {
-        response = '検索キーワードを「」で囲んで指定してください。\n\n例: 「搬送」を検索';
-      }
-    }
-
-    // 3. 統計情報の表示
-    else if (messageLower.includes('統計') || messageLower.includes('サマリ') || messageLower.includes('一覧')) {
-      const allReqs = await storage.getAllRequirements();
-
-      const stakeholderReqs = allReqs.filter(r => r.type === 'stakeholder');
-      const systemReqs = allReqs.filter(r => r.type === 'system');
-      const functionalReqs = allReqs.filter(r => r.type === 'system_functional' || r.type === 'functional');
-
-      const approvedReqs = allReqs.filter(r => r.status === 'approved');
-      const criticalReqs = allReqs.filter(r => r.priority === 'critical');
-      const highReqs = allReqs.filter(r => r.priority === 'high');
-
-      response = `📊 **要求管理統計情報**\n\n`;
-      response += `### 📈 総計\n`;
-      response += `• 総要求数: **${allReqs.length}件**\n\n`;
-
-      response += `### 📋 要求タイプ別\n`;
-      response += `• 👥 ステークホルダ要求: ${stakeholderReqs.length}件\n`;
-      response += `• ⚙️ システム要求: ${systemReqs.length}件\n`;
-      response += `• 🔧 機能要求: ${functionalReqs.length}件\n\n`;
-
-      response += `### ✅ ステータス\n`;
-      response += `• 承認済み: ${approvedReqs.length}件 (${Math.round(approvedReqs.length / allReqs.length * 100)}%)\n\n`;
-
-      response += `### 🚨 優先度\n`;
-      response += `• Critical: ${criticalReqs.length}件\n`;
-      response += `• High: ${highReqs.length}件\n\n`;
-
-      response += `### 📍 カテゴリ\n`;
-      const categories = [...new Set(allReqs.map(r => r.category))];
-      categories.forEach(cat => {
-        const count = allReqs.filter(r => r.category === cat).length;
-        response += `• ${cat}: ${count}件\n`;
+    if (!message || message.trim() === '') {
+      return res.status(400).json({
+        response: '❌ メッセージが空です。質問を入力してください。'
       });
     }
 
-    // 4. 依存関係の分析
-    else if (messageLower.includes('依存') || messageLower.includes('関係')) {
-      const idMatch = message.match(/([A-Z]+-\d+)/i);
-
-      if (idMatch) {
-        const reqId = idMatch[1].toUpperCase();
-        const requirement = await storage.getRequirement(reqId);
-
-        if (requirement) {
-          const allReqs = await storage.getAllRequirements();
-
-          // 上位要求（この要求が依存・洗練しているもの）
-          const parents = allReqs.filter(r =>
-            requirement.dependencies.includes(r.id) ||
-            (requirement.refines && requirement.refines.includes(r.id)) ||
-            requirement.parentId === r.id
-          );
-
-          // 下位要求（この要求に依存・洗練しているもの）
-          const children = allReqs.filter(r =>
-            r.dependencies.includes(reqId) ||
-            (r.refines && r.refines.includes(reqId)) ||
-            r.parentId === reqId
-          );
-
-          response = `🔗 **依存関係分析**: ${reqId}\n\n`;
-          response += `**タイトル**: ${requirement.title}\n\n`;
-
-          if (parents.length > 0) {
-            response += `### ⬆️ 上位要求 (${parents.length}件)\n`;
-            parents.forEach(p => {
-              const typeIcon = p.type === 'stakeholder' ? '👥' : p.type === 'system' ? '⚙️' : '🔧';
-              response += `• ${typeIcon} **${p.id}**: ${p.title}\n`;
-            });
-            response += `\n`;
-          } else {
-            response += `### ⬆️ 上位要求\n• なし（最上位要求です）\n\n`;
-          }
-
-          if (children.length > 0) {
-            response += `### ⬇️ 下位要求 (${children.length}件)\n`;
-            children.forEach(c => {
-              const typeIcon = c.type === 'stakeholder' ? '👥' : c.type === 'system' ? '⚙️' : '🔧';
-              response += `• ${typeIcon} **${c.id}**: ${c.title}\n`;
-            });
-          } else {
-            response += `### ⬇️ 下位要求\n• なし（最下位要求です）\n`;
-          }
-        } else {
-          response = `❌ 要求ID「${reqId}」が見つかりませんでした。`;
-        }
-      } else {
-        response = '要求IDを指定してください。\n\n例: 「STK-001の依存関係を分析」';
-      }
-    }
-
-    // 5. 要求の詳細表示
-    else if (messageLower.includes('詳細') || messageLower.includes('表示')) {
-      const idMatch = message.match(/([A-Z]+-\d+)/i);
-
-      if (idMatch) {
-        const reqId = idMatch[1].toUpperCase();
-        const requirement = await storage.getRequirement(reqId);
-
-        if (requirement) {
-          const typeIcon = requirement.type === 'stakeholder' ? '👥' : requirement.type === 'system' ? '⚙️' : '🔧';
-          const statusIcon = requirement.status === 'approved' ? '✅' : requirement.status === 'proposed' ? '📝' : '📋';
-          const priorityIcon = requirement.priority === 'critical' ? '🚨' : requirement.priority === 'high' ? '⚠️' : requirement.priority === 'medium' ? '📌' : '📍';
-
-          response = `${typeIcon} **要求詳細**: ${reqId}\n\n`;
-          response += `### 基本情報\n`;
-          response += `**タイトル**: ${requirement.title}\n`;
-          response += `**ステータス**: ${statusIcon} ${requirement.status}\n`;
-          response += `**優先度**: ${priorityIcon} ${requirement.priority}\n`;
-          response += `**カテゴリ**: ${requirement.category}\n`;
-          response += `**タイプ**: ${requirement.type || '未設定'}\n\n`;
-
-          response += `### 📝 説明\n${requirement.description}\n\n`;
-
-          if (requirement.rationale) {
-            response += `### 💡 理由\n${requirement.rationale}\n\n`;
-          }
-
-          if (requirement.tags.length > 0) {
-            response += `### 🏷️ タグ\n${requirement.tags.join(', ')}\n\n`;
-          }
-
-          response += `### 📅 日時\n`;
-          response += `• 作成: ${new Date(requirement.createdAt).toLocaleString('ja-JP')}\n`;
-          response += `• 更新: ${new Date(requirement.updatedAt).toLocaleString('ja-JP')}\n`;
-        } else {
-          response = `❌ 要求ID「${reqId}」が見つかりませんでした。`;
-        }
-      } else {
-        response = '要求IDを指定してください。\n\n例: 「STK-001の詳細を表示」';
-      }
-    }
-
-    // 6. 要求の更新（簡易版 - 説明の更新のみ）
-    else if (messageLower.includes('更新') || messageLower.includes('変更')) {
-      const idMatch = message.match(/([A-Z]+-\d+)/i);
-
-      if (idMatch) {
-        const reqId = idMatch[1].toUpperCase();
-        const requirement = await storage.getRequirement(reqId);
-
-        if (requirement) {
-          // 現在の情報を表示
-          response = `📝 **要求の更新**: ${reqId}\n\n`;
-          response += `**現在のタイトル**: ${requirement.title}\n\n`;
-          response += `更新機能は現在開発中です。\n\n`;
-          response += `以下の情報を指定することで、要求を更新できるようになります:\n`;
-          response += `• タイトル\n`;
-          response += `• 説明\n`;
-          response += `• ステータス (draft/proposed/approved)\n`;
-          response += `• 優先度 (critical/high/medium/low)\n`;
-          response += `• タグ\n\n`;
-          response += `現在は、左側のツリービューから要求をクリックして手動で編集してください。`;
-        } else {
-          response = `❌ 要求ID「${reqId}」が見つかりませんでした。`;
-        }
-      } else {
-        response = '更新する要求IDを指定してください。\n\n例: 「STK-001を更新」';
-      }
-    }
-
-    // 7. デフォルトヘルプ
-    else {
-      response = `こんにちは！要求管理システムのアシスタントです。🤖\n\n`;
-      response += `以下の操作ができます:\n\n`;
-      response += `### 📋 利用可能なコマンド\n\n`;
-      response += `**1. 妥当性チェック** ✅\n`;
-      response += `例: 「STK-001の妥当性をチェック」\n`;
-      response += `• 要求の整合性を検証します\n\n`;
-
-      response += `**2. 要求検索** 🔍\n`;
-      response += `例: 「搬送」を検索\n`;
-      response += `• キーワードで要求を検索します\n\n`;
-
-      response += `**3. 統計情報** 📊\n`;
-      response += `例: 「統計を表示」\n`;
-      response += `• 要求の統計情報を表示します\n\n`;
-
-      response += `**4. 依存関係分析** 🔗\n`;
-      response += `例: 「SYS-001の依存関係を分析」\n`;
-      response += `• 上位・下位要求を表示します\n\n`;
-
-      response += `**5. 要求詳細表示** 📋\n`;
-      response += `例: 「FUNC-001の詳細を表示」\n`;
-      response += `• 要求の完全な情報を表示します\n\n`;
-
-      response += `**6. 要求更新** 📝\n`;
-      response += `例: 「STK-001を更新」\n`;
-      response += `• 要求の情報を更新します（開発中）\n\n`;
-
-      response += `何をお手伝いしましょうか？`;
-    }
+    // AIチャットアシスタントを使用
+    const response = await chatAssistant.chat(message);
 
     res.json({ response });
   } catch (error: any) {
@@ -2620,6 +2354,32 @@ app.post('/api/chat', express.json(), async (req, res) => {
     res.status(500).json({
       response: `❌ エラーが発生しました:\n\n${error.message}\n\nもう一度お試しください。`
     });
+  }
+});
+
+// 会話履歴クリアエンドポイント
+app.post('/api/chat/clear', express.json(), async (req, res) => {
+  try {
+    chatAssistant.clearHistory();
+    res.json({ success: true, message: '会話履歴をクリアしました。' });
+  } catch (error: any) {
+    console.error('Chat clear error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// AI利用可能状態の確認エンドポイント
+app.get('/api/chat/status', async (req, res) => {
+  try {
+    const isAvailable = chatAssistant.isAvailable();
+    res.json({
+      aiEnabled: isAvailable,
+      message: isAvailable
+        ? 'AIチャット機能が有効です'
+        : 'AIチャット機能を使用するには ANTHROPIC_API_KEY を設定してください'
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 
