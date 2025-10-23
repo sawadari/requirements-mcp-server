@@ -33,10 +33,16 @@ export class AIChatAssistant {
     };
 
     // ANTHROPIC_API_KEYが設定されている場合のみ初期化
-    if (process.env.ANTHROPIC_API_KEY) {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    console.log('[AI Chat] ANTHROPIC_API_KEY status:', apiKey ? `Set (length: ${apiKey.length})` : 'NOT SET');
+
+    if (apiKey) {
       this.anthropic = new Anthropic({
-        apiKey: process.env.ANTHROPIC_API_KEY,
+        apiKey: apiKey,
       });
+      console.log('[AI Chat] ✅ Anthropic client initialized successfully');
+    } else {
+      console.log('[AI Chat] ⚠️  Anthropic client NOT initialized - API key missing');
     }
   }
 
@@ -123,7 +129,7 @@ export class AIChatAssistant {
 
       // Claude APIを呼び出し
       const response = await this.anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-7-sonnet-20250219',
         max_tokens: 2048,
         system: systemPrompt,
         messages: [
