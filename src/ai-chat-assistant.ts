@@ -10,7 +10,7 @@ import { ValidationEngine } from './validation/validation-engine.js';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
-  content: string;
+  content: string | any[];
 }
 
 export interface ChatContext {
@@ -415,14 +415,14 @@ export ANTHROPIC_API_KEY=sk-ant-xxxxx
           title: input.title,
           description: input.description,
           priority: input.priority,
-          status: 'draft',
+          status: 'draft' as any,
           category: input.category || '',
           rationale: input.rationale || '',
           dependencies: [],
           refines: [],
           author: 'AI Chat Assistant',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
           tags: []
         };
 
