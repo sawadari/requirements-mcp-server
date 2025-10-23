@@ -1,0 +1,162 @@
+name: Miyabi Health Check
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # 毎日午前9時(UTC)に実行
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Miyabi
+        run: npm install -g miyabi@latest
+
+      - name: Run Miyabi Doctor
+        id: doctor
+        run: |
+          echo "Running Miyabi health check..."
+          RESULT=$(npx miyabi doctor --json)
+          echo "$RESULT"
+
+          # JSON結果を解析
+          STATUS=$(echo "$RESULT" | jq -r '.overallStatus')
+          PASSED=$(echo "$RESULT" | jq -r '.summary.passed')
+          FAILED=$(echo "$RESULT" | jq -r '.summary.failed')
+          WARNED=$(echo "$RESULT" | jq -r '.summary.warned')
+
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          echo "passed=$PASSED" >> $GITHUB_OUTPUT
+          echo "failed=$FAILED" >> $GITHUB_OUTPUT
+          echo "warned=$WARNED" >> $GITHUB_OUTPUT
+
+          # 結果をファイルに保存
+          echo "$RESULT" > health-check-result.json
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload health check results
+        uses: actions/upload-artifact@v4
+        with:
+          name: health-check-results
+          path: health-check-result.json
+          retention-days: 30
+
+      - name: Create Issue on failure
+        if: steps.doctor.outputs.status == 'critical'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const result = JSON.parse(fs.readFileSync('health-check-result.json', 'utf8'));
+
+            const failedChecks = result.checks
+              .filter(c => c.status === 'fail')
+              .map(c => `- **${c.name}**: ${c.message}\n  ${c.suggestion || ''}`)
+              .join('\n');
+
+            const issueBody = `## 🚨 Miyabi Health Check Failed
+
+**Status**: ${result.overallStatus}
+**Date**: ${new Date().toISOString()}
+
+### Summary
+- ✅ Passed: ${result.summary.passed}
+- ⚠️ Warned: ${result.summary.warned}
+- ❌ Failed: ${result.summary.failed}
+
+### Failed Checks
+${failedChecks}
+
+### Action Required
+Please review and fix the failed checks above.
+
+---
+*This issue was automatically created by the Miyabi Health Check workflow.*`;
+
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: '⚠️ health-check-failed',
+            });
+
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🚨 Miyabi Health Check Failed',
+                body: issueBody,
+                labels: ['⚠️ health-check-failed', 'priority:P1-High', 'type:bug'],
+              });
+            } else {
+              // 既存のIssueにコメント
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues.data[0].number,
+                body: `### Health Check Failed Again\n\n${issueBody}`,
+              });
+            }
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const result = JSON.parse(fs.readFileSync('health-check-result.json', 'utf8'));
+
+            const status = result.overallStatus === 'healthy' ? '✅' :
+                           result.overallStatus === 'warning' ? '⚠️' : '❌';
+
+            const body = `## ${status} Miyabi Health Check
+
+**Status**: ${result.overallStatus}
+**Passed**: ${result.summary.passed}/${result.summary.total}
+**Failed**: ${result.summary.failed}
+**Warned**: ${result.summary.warned}
+
+<details>
+<summary>View Details</summary>
+
+\`\`\`json
+${JSON.stringify(result, null, 2)}
+\`\`\`
+
+</details>`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body,
+            });
+
+      - name: Fail job if critical
+        if: steps.doctor.outputs.status == 'critical'
+        run: |
+          echo "❌ Health check failed with critical status"
+          echo "Failed checks: ${{ steps.doctor.outputs.failed }}"
+          exit 1
