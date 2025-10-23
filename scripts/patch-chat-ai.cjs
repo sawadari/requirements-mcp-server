@@ -1,112 +1,60 @@
-/**
- * AI Chat統合パッチスクリプト
- * view-server.tsにAIチャット機能を統合
- */
-
 const fs = require('fs');
 const path = require('path');
 
-console.log('🔧 AI Chat統合パッチを適用します...\n');
+const filePath = path.join(__dirname, '..', 'src', 'ai-chat-assistant.ts');
+let content = fs.readFileSync(filePath, 'utf-8');
 
-const viewServerPath = path.join(__dirname, '../src/view-server.ts');
+// 行67-77を置換
+const searchText = `## システム概要
+このシステムは、要求管理（Requirements Management）を支援するツールです。
+要求の追加、検索、検証、依存関係分析、品質チェックなどの機能があります。
 
-// ファイルを読み込み
-let content = fs.readFileSync(viewServerPath, 'utf-8');
+## 現在の要求データ
+- 総要求数: \${allReqs.length}件
+- ステークホルダ要求: \${stakeholderReqs.length}件
+- システム要求: \${systemReqs.length}件
+- 機能要求: \${functionalReqs.length}件`;
 
-// 1. import文を追加
-console.log('📝 Step 1: import文を追加...');
-if (!content.includes('ai-chat-assistant')) {
-  content = content.replace(
-    "import { RequirementValidator } from './validator.js';",
-    "import { RequirementValidator } from './validator.js';\nimport { createChatAssistant } from './ai-chat-assistant.js';"
-  );
-  console.log('✅ import文を追加しました');
-} else {
-  console.log('✅ import文は既に存在します');
-}
+const replaceText = `## 管理対象のプロジェクト
+このシステムで管理しているプロジェクト: **\${projectDomain}**
 
-// 2. chatAssistant初期化を追加
-console.log('\n📝 Step 2: chatAssistant初期化を追加...');
-if (!content.includes('createChatAssistant')) {
-  content = content.replace(
-    'const validator = new RequirementValidator(storage);',
-    `const validator = new RequirementValidator(storage);
+## 現在の要求データ
+- 総要求数: \${allReqs.length}件
+- ステークホルダ要求: \${stakeholderReqs.length}件
+- システム要求: \${systemReqs.length}件
+- 機能要求: \${functionalReqs.length}件
 
-// AI Chat Assistant
-const chatAssistant = createChatAssistant(storage, validator);`
-  );
-  console.log('✅ 初期化コードを追加しました');
-} else {
-  console.log('✅ 初期化コードは既に存在します');
-}
+## 主な要求の概要
+\${requirementsSummary}
 
-// 3. チャットAPIエンドポイントを置き換え
-console.log('\n📝 Step 3: チャットAPIエンドポイントを置き換え...');
+## ユーザーへの回答方針
+- 「このシステム」と聞かれたら、**\${projectDomain}について**答えること（要求管理ツールではない）
+- 要求データの内容を基に、プロジェクトの機能や特徴を説明すること
+- 具体的な要求IDを参照しながら説明すると分かりやすい`;
 
-const newChatAPI = `app.post('/api/chat', express.json(), async (req, res) => {
-  try {
-    const { message } = req.body;
+// filterの後に追加するコード
+const addAfterFilter = `
+    // 要求データの具体的な内容を抽出
+    const requirementsSummary = stakeholderReqs.slice(0, 5).map(req =>
+      \`- \${req.id}: \${req.title}\\n  \${req.description.substring(0, 150)}...\`
+    ).join('\\n');
 
-    if (!message || message.trim() === '') {
-      return res.status(400).json({
-        response: '❌ メッセージが空です。質問を入力してください。'
-      });
+    // プロジェクトのドメインを推測
+    const allTitles = allReqs.map(r => r.title + ' ' + r.description).join(' ').toLowerCase();
+    let projectDomain = '不明';
+    if (allTitles.includes('搬送') || allTitles.includes('agv') || allTitles.includes('自動搬送')) {
+      projectDomain = '自動搬送車両システム (AGV)';
+    } else if (allTitles.includes('ロボット')) {
+      projectDomain = 'ロボットシステム';
     }
+`;
 
-    // AIチャットアシスタントを使用
-    const response = await chatAssistant.chat(message);
+// 1. システムプロンプトの内容を置換
+content = content.replace(searchText, replaceText);
 
-    res.json({ response });
-  } catch (error: any) {
-    console.error('Chat API error:', error);
-    res.status(500).json({
-      response: \`❌ エラーが発生しました:\\n\\n\${error.message}\\n\\nもう一度お試しください。\`
-    });
-  }
-});
+// 2. filter行の後に新しいコードを追加
+const filterLine = `    const functionalReqs = allReqs.filter(r => r.type === 'system_functional' || r.type === 'functional');`;
+content = content.replace(filterLine, filterLine + addAfterFilter);
 
-// 会話履歴クリアエンドポイント
-app.post('/api/chat/clear', express.json(), async (req, res) => {
-  try {
-    chatAssistant.clearHistory();
-    res.json({ success: true, message: '会話履歴をクリアしました。' });
-  } catch (error: any) {
-    console.error('Chat clear error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// AI利用可能状態の確認エンドポイント
-app.get('/api/chat/status', async (req, res) => {
-  try {
-    const isAvailable = chatAssistant.isAvailable();
-    res.json({
-      aiEnabled: isAvailable,
-      message: isAvailable
-        ? 'AIチャット機能が有効です'
-        : 'AIチャット機能を使用するには ANTHROPIC_API_KEY を設定してください'
-    });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});`;
-
-// 既存のチャットAPIエンドポイントを置き換え
-const chatAPIPattern = /app\.post\('\/api\/chat',[\s\S]*?\n\}\);/;
-if (chatAPIPattern.test(content)) {
-  content = content.replace(chatAPIPattern, newChatAPI);
-  console.log('✅ チャットAPIエンドポイントを置き換えました');
-} else {
-  console.log('⚠️ 既存のチャットAPIエンドポイントが見つかりませんでした');
-}
-
-// ファイルに書き込み
-fs.writeFileSync(viewServerPath, content, 'utf-8');
-
-console.log('\n🎉 パッチ適用完了！\n');
-console.log('次のステップ:');
-console.log('1. npm run build でビルド');
-console.log('2. 環境変数を設定:');
-console.log('   Windows: set ANTHROPIC_API_KEY=sk-ant-xxx');
-console.log('   Linux/Mac: export ANTHROPIC_API_KEY=sk-ant-xxx');
-console.log('3. npm run view-server でサーバー起動\n');
+fs.writeFileSync(filePath, content, 'utf-8');
+console.log('✅ AI Chat Assistant updated with project domain awareness');
