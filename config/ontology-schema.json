@@ -26,12 +26,12 @@
       "canHaveChildren": true,
       "canHaveParent": true,
       "parentStages": ["stakeholder"],
-      "childStages": ["functional"],
+      "childStages": ["system_functional"],
       "color": "#2196F3",
       "icon": "⚙️"
     },
     {
-      "id": "functional",
+      "id": "system_functional",
       "name": "システム機能要求",
       "description": "システムをホワイトボックスとしてみたときの要求（物理アーキテクチャに依存しない）",
       "level": 3,
@@ -51,11 +51,11 @@
       "description": "ステークホルダ要求はシステム要求に詳細化される"
     },
     "system": {
-      "allowedChildren": ["functional"],
+      "allowedChildren": ["system_functional"],
       "meceRequired": true,
       "description": "システム要求はシステム機能要求に詳細化される"
     },
-    "functional": {
+    "system_functional": {
       "allowedChildren": [],
       "meceRequired": true,
       "description": "システム機能要求は最下層"
@@ -96,7 +96,7 @@
         "recommended": 0.5
       }
     },
-    "functional": {
+    "system_functional": {
       "descriptionLength": {
         "min": 150,
         "max": 800,
@@ -131,7 +131,7 @@
         "optionalFields": ["rationale", "author", "tags", "non_functional_attributes"],
         "forbiddenFields": ["implementation_hints", "api_specification"]
       },
-      "functional": {
+      "system_functional": {
         "requiredFields": ["title", "description", "priority", "category"],
         "optionalFields": ["rationale", "author", "tags", "implementation_hints", "api_specification"],
         "forbiddenFields": []

@@ -2,6 +2,9 @@
  * View Server - ブラウザでビューを表示するWebサーバー
  */
 
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -23,13 +26,23 @@ const validator = new RequirementValidator(storage);
 // ValidationEngine for AI Chat Assistant
 let validationEngine: ValidationEngine;
 let chatAssistant: ReturnType<typeof createChatAssistant>;
+let chatAssistantReady = false;
 
 // Initialize ValidationEngine and AI Chat Assistant asynchronously
-(async () => {
+const initChatAssistant = (async () => {
   validationEngine = await ValidationEngine.create();
   chatAssistant = createChatAssistant(storage, validationEngine);
+  chatAssistantReady = true;
   console.log('✅ AI Chat Assistant initialized');
 })();
+
+// Helper to ensure chat assistant is ready
+async function ensureChatAssistantReady() {
+  if (!chatAssistantReady) {
+    await initChatAssistant;
+  }
+  return chatAssistant;
+}
 
 // CORS有効化
 app.use(cors());
@@ -2345,8 +2358,9 @@ app.post('/api/chat', express.json(), async (req, res) => {
       });
     }
 
-    // AIチャットアシスタントを使用
-    const response = await chatAssistant.chat(message);
+    // AIチャットアシスタントの準備完了を待つ
+    const assistant = await ensureChatAssistantReady();
+    const response = await assistant.chat(message);
 
     res.json({ response });
   } catch (error: any) {
@@ -2360,7 +2374,8 @@ app.post('/api/chat', express.json(), async (req, res) => {
 // 会話履歴クリアエンドポイント
 app.post('/api/chat/clear', express.json(), async (req, res) => {
   try {
-    chatAssistant.clearHistory();
+    const assistant = await ensureChatAssistantReady();
+    assistant.clearHistory();
     res.json({ success: true, message: '会話履歴をクリアしました。' });
   } catch (error: any) {
     console.error('Chat clear error:', error);
@@ -2371,7 +2386,8 @@ app.post('/api/chat/clear', express.json(), async (req, res) => {
 // AI利用可能状態の確認エンドポイント
 app.get('/api/chat/status', async (req, res) => {
   try {
-    const isAvailable = chatAssistant.isAvailable();
+    const assistant = await ensureChatAssistantReady();
+    const isAvailable = assistant.isAvailable();
     res.json({
       aiEnabled: isAvailable,
       message: isAvailable
