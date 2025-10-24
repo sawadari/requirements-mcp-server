@@ -42,6 +42,22 @@
         "apply_fixes",
         "rollback_fixes"
       ]
+    },
+    "project_management": {
+      "name": "Project Management",
+      "description": "プロジェクト管理・切り替え",
+      "tools": [
+        "list_projects",
+        "get_current_project",
+        "switch_project",
+        "create_project",
+        "delete_project",
+        "list_projects",
+        "get_current_project",
+        "switch_project",
+        "create_project",
+        "delete_project"
+      ]
     }
   },
   "tools": {
@@ -56,9 +72,23 @@
         "システム要求の追加",
         "機能要求の追加"
       ],
-      "inputs": ["title", "description", "priority", "category", "tags", "dependencies", "author", "assignee"],
-      "outputs": ["Requirement"],
-      "relatedTools": ["update_requirement", "validate_requirement"],
+      "inputs": [
+        "title",
+        "description",
+        "priority",
+        "category",
+        "tags",
+        "dependencies",
+        "author",
+        "assignee"
+      ],
+      "outputs": [
+        "Requirement"
+      ],
+      "relatedTools": [
+        "update_requirement",
+        "validate_requirement"
+      ],
       "changelog": [
         {
           "version": "1.0.0",
@@ -76,9 +106,16 @@
       "useCases": [
         "特定要求の詳細確認"
       ],
-      "inputs": ["id"],
-      "outputs": ["Requirement"],
-      "relatedTools": ["list_requirements", "search_requirements"],
+      "inputs": [
+        "id"
+      ],
+      "outputs": [
+        "Requirement"
+      ],
+      "relatedTools": [
+        "list_requirements",
+        "search_requirements"
+      ],
       "changelog": [
         {
           "version": "1.0.0",
@@ -98,8 +135,13 @@
         "統計情報の取得"
       ],
       "inputs": [],
-      "outputs": ["Requirement[]"],
-      "relatedTools": ["search_requirements", "get_requirement"],
+      "outputs": [
+        "Requirement[]"
+      ],
+      "relatedTools": [
+        "search_requirements",
+        "get_requirement"
+      ],
       "changelog": [
         {
           "version": "1.0.0",
@@ -119,9 +161,24 @@
         "優先度変更",
         "説明の更新"
       ],
-      "inputs": ["id", "title?", "description?", "status?", "priority?", "category?", "tags?", "dependencies?", "assignee?"],
-      "outputs": ["Requirement"],
-      "relatedTools": ["get_requirement", "validate_requirement"],
+      "inputs": [
+        "id",
+        "title?",
+        "description?",
+        "status?",
+        "priority?",
+        "category?",
+        "tags?",
+        "dependencies?",
+        "assignee?"
+      ],
+      "outputs": [
+        "Requirement"
+      ],
+      "relatedTools": [
+        "get_requirement",
+        "validate_requirement"
+      ],
       "changelog": [
         {
           "version": "1.0.0",
@@ -140,9 +197,15 @@
         "不要な要求の削除",
         "重複要求の削除"
       ],
-      "inputs": ["id"],
-      "outputs": ["boolean"],
-      "relatedTools": ["get_requirement"],
+      "inputs": [
+        "id"
+      ],
+      "outputs": [
+        "boolean"
+      ],
+      "relatedTools": [
+        "get_requirement"
+      ],
       "changelog": [
         {
           "version": "1.0.0",
@@ -163,9 +226,20 @@
         "タグで絞り込み",
         "全文検索"
       ],
-      "inputs": ["status?", "priority?", "category?", "tags?", "searchText?"],
-      "outputs": ["Requirement[]"],
-      "relatedTools": ["list_requirements", "get_requirement"],
+      "inputs": [
+        "status?",
+        "priority?",
+        "category?",
+        "tags?",
+        "searchText?"
+      ],
+      "outputs": [
+        "Requirement[]"
+      ],
+      "relatedTools": [
+        "list_requirements",
+        "get_requirement"
+      ],
       "changelog": [
         {
           "version": "1.0.0",
@@ -184,9 +258,16 @@
         "変更の影響範囲確認",
         "リスク評価"
       ],
-      "inputs": ["id"],
-      "outputs": ["ImpactAnalysis"],
-      "relatedTools": ["get_dependency_graph", "propose_change"],
+      "inputs": [
+        "id"
+      ],
+      "outputs": [
+        "ImpactAnalysis"
+      ],
+      "relatedTools": [
+        "get_dependency_graph",
+        "propose_change"
+      ],
       "changelog": [
         {
           "version": "1.0.0",
@@ -205,9 +286,15 @@
         "依存関係の可視化",
         "循環参照の検出"
       ],
-      "inputs": ["format?"],
-      "outputs": ["DependencyGraph"],
-      "relatedTools": ["analyze_impact"],
+      "inputs": [
+        "format?"
+      ],
+      "outputs": [
+        "DependencyGraph"
+      ],
+      "relatedTools": [
+        "analyze_impact"
+      ],
       "changelog": [
         {
           "version": "1.0.0",
@@ -226,9 +313,17 @@
         "要求追加前の妥当性チェック",
         "品質スコアの確認"
       ],
-      "inputs": ["id", "useLLM?"],
-      "outputs": ["ValidationResult"],
-      "relatedTools": ["validate_all_requirements", "get_validation_report"],
+      "inputs": [
+        "id",
+        "useLLM?"
+      ],
+      "outputs": [
+        "ValidationResult"
+      ],
+      "relatedTools": [
+        "validate_all_requirements",
+        "get_validation_report"
+      ],
       "changelog": [
         {
           "version": "1.0.0",
@@ -247,9 +342,17 @@
         "定期的な品質チェック",
         "リリース前の検証"
       ],
-      "inputs": ["useLLM?", "updateMetrics?"],
-      "outputs": ["Map<string, ValidationResult>"],
-      "relatedTools": ["validate_requirement", "get_validation_report"],
+      "inputs": [
+        "useLLM?",
+        "updateMetrics?"
+      ],
+      "outputs": [
+        "Map<string, ValidationResult>"
+      ],
+      "relatedTools": [
+        "validate_requirement",
+        "get_validation_report"
+      ],
       "changelog": [
         {
           "version": "1.0.0",
@@ -268,9 +371,15 @@
         "品質サマリーの確認",
         "違反の詳細確認"
       ],
-      "inputs": ["format?"],
-      "outputs": ["ValidationReport"],
-      "relatedTools": ["validate_all_requirements"],
+      "inputs": [
+        "format?"
+      ],
+      "outputs": [
+        "ValidationReport"
+      ],
+      "relatedTools": [
+        "validate_all_requirements"
+      ],
       "changelog": [
         {
           "version": "1.0.0",
@@ -289,9 +398,18 @@
         "変更提案の作成",
         "影響分析を含む提案"
       ],
-      "inputs": ["requirementId", "proposedChanges", "reason"],
-      "outputs": ["ChangeProposal"],
-      "relatedTools": ["analyze_impact", "preview_fixes"],
+      "inputs": [
+        "requirementId",
+        "proposedChanges",
+        "reason"
+      ],
+      "outputs": [
+        "ChangeProposal"
+      ],
+      "relatedTools": [
+        "analyze_impact",
+        "preview_fixes"
+      ],
       "changelog": [
         {
           "version": "1.0.0",
@@ -310,9 +428,16 @@
         "自動修正ルールの設定",
         "品質基準の適用"
       ],
-      "inputs": ["policyPath"],
-      "outputs": ["FixPolicy"],
-      "relatedTools": ["preview_fixes", "apply_fixes"],
+      "inputs": [
+        "policyPath"
+      ],
+      "outputs": [
+        "FixPolicy"
+      ],
+      "relatedTools": [
+        "preview_fixes",
+        "apply_fixes"
+      ],
       "changelog": [
         {
           "version": "1.0.0",
@@ -331,9 +456,16 @@
         "自動修正の事前確認",
         "変更差分の確認"
       ],
-      "inputs": ["policyPath?"],
-      "outputs": ["ChangeSet"],
-      "relatedTools": ["load_policy", "apply_fixes"],
+      "inputs": [
+        "policyPath?"
+      ],
+      "outputs": [
+        "ChangeSet"
+      ],
+      "relatedTools": [
+        "load_policy",
+        "apply_fixes"
+      ],
       "changelog": [
         {
           "version": "1.0.0",
@@ -352,9 +484,16 @@
         "自動修正の実行",
         "一括修正の適用"
       ],
-      "inputs": ["changeSetId"],
-      "outputs": ["ApplyResult"],
-      "relatedTools": ["preview_fixes", "rollback_fixes"],
+      "inputs": [
+        "changeSetId"
+      ],
+      "outputs": [
+        "ApplyResult"
+      ],
+      "relatedTools": [
+        "preview_fixes",
+        "rollback_fixes"
+      ],
       "changelog": [
         {
           "version": "1.0.0",
@@ -373,13 +512,162 @@
         "誤った修正の取り消し",
         "変更の巻き戻し"
       ],
-      "inputs": ["changeSetId"],
-      "outputs": ["RollbackResult"],
-      "relatedTools": ["apply_fixes"],
+      "inputs": [
+        "changeSetId"
+      ],
+      "outputs": [
+        "RollbackResult"
+      ],
+      "relatedTools": [
+        "apply_fixes"
+      ],
       "changelog": [
         {
           "version": "1.0.0",
           "date": "2025-01-15",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "list_projects": {
+      "name": "list_projects",
+      "category": "project_management",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "すべてのプロジェクトの一覧を取得します",
+      "useCases": [
+        "全プロジェクトの俯瞰",
+        "現在アクティブなプロジェクトの確認",
+        "各プロジェクトの要求数を確認"
+      ],
+      "inputs": [],
+      "outputs": [
+        "ProjectInfo[]"
+      ],
+      "relatedTools": [
+        "get_current_project",
+        "switch_project"
+      ],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-10-24",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "get_current_project": {
+      "name": "get_current_project",
+      "category": "project_management",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "現在アクティブなプロジェクトの情報を取得します",
+      "useCases": [
+        "現在操作中のプロジェクトを確認",
+        "プロジェクトの詳細情報を取得",
+        "プロジェクトの要求数を確認"
+      ],
+      "inputs": [],
+      "outputs": [
+        "ProjectInfo"
+      ],
+      "relatedTools": [
+        "list_projects",
+        "switch_project"
+      ],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-10-24",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "switch_project": {
+      "name": "switch_project",
+      "category": "project_management",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "別のプロジェクトに切り替えます",
+      "useCases": [
+        "複数システムの開発で対象を切り替え",
+        "異なるプロジェクトフェーズへの切り替え",
+        "環境ごとの要求管理切り替え"
+      ],
+      "inputs": [
+        "projectId"
+      ],
+      "outputs": [
+        "ProjectInfo"
+      ],
+      "relatedTools": [
+        "list_projects",
+        "get_current_project"
+      ],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-10-24",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "create_project": {
+      "name": "create_project",
+      "category": "project_management",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "新しいプロジェクトを作成します",
+      "useCases": [
+        "新規システムの要求管理開始",
+        "既存プロジェクトをコピーして新規作成",
+        "プロジェクトフェーズの追加"
+      ],
+      "inputs": [
+        "projectId",
+        "projectName",
+        "description?",
+        "copyFrom?"
+      ],
+      "outputs": [
+        "ProjectInfo"
+      ],
+      "relatedTools": [
+        "list_projects",
+        "switch_project"
+      ],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-10-24",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "delete_project": {
+      "name": "delete_project",
+      "category": "project_management",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "プロジェクトを削除します",
+      "useCases": [
+        "不要なプロジェクトの削除",
+        "テストプロジェクトのクリーンアップ",
+        "完了したプロジェクトの削除"
+      ],
+      "inputs": [
+        "projectId"
+      ],
+      "outputs": [
+        "boolean"
+      ],
+      "relatedTools": [
+        "list_projects"
+      ],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-10-24",
           "changes": "初回実装"
         }
       ]

@@ -1,0 +1,42 @@
+--- a/src/tools/validation-tools.ts
++++ b/src/tools/validation-tools.ts
+@@ -51,9 +51,9 @@
+   private violationToError(violation: ValidationViolation, requirementId: string): ValidationError {
+     return {
+       requirementId,
+-      field: violation.path || 'general',
++      field: 'general',
+       severity: violation.severity,
+       message: violation.message,
+       rule: violation.ruleId,
+-      suggestedFix: undefined,
++      suggestedFix: violation.suggestedFix,
+     };
+@@ -126,7 +126,7 @@
+         const result = await this.validateRequirement(requirement.id, options);
+         results.push(result);
+       } catch (error) {
+-        logger.error(\`Failed to validate \${requirement.id}:\`, error);
++        logger.error(\`Failed to validate \${requirement.id}:\`, error as Error);
+         results.push({
+           requirementId: requirement.id,
+@@ -258,7 +258,7 @@
+         };
+       };
+     } catch (error) {
+-      logger.error(\`Failed to apply fix:\`, error);
++      logger.error(\`Failed to apply fix:\`, error as Error);
+       return {
+         success: false,
+--- a/src/tools/batch-tools.ts
++++ b/src/tools/batch-tools.ts
+@@ -202,8 +202,8 @@
+     const byPriority: Record<string, number> = {};
+ 
+     for (const req of allReqs) {
+-      byType[req.type] = (byType[req.type] || 0) + 1;
+-      byStatus[req.status] = (byStatus[req.status] || 0) + 1;
++      byType[req.type] = (byType[req.type as string] || 0) + 1;
++      byStatus[req.status] = (byStatus[req.status as string] || 0) + 1;
+       byPriority[req.priority] = (byPriority[req.priority] || 0) + 1;
+     }

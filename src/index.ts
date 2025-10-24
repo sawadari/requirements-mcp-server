@@ -125,6 +125,22 @@ const RollbackFixesSchema = z.object({
   changeSetId: z.string().describe('ロールバックするChangeSetのID'),
 });
 
+// Project Management Schemas
+const SwitchProjectSchema = z.object({
+  projectId: z.string().describe('切り替え先のプロジェクトID'),
+});
+
+const CreateProjectSchema = z.object({
+  projectId: z.string().describe('新規プロジェクトのID（[a-z0-9-]+）'),
+  projectName: z.string().describe('プロジェクト名'),
+  description: z.string().optional().describe('プロジェクトの説明'),
+  copyFrom: z.string().optional().describe('コピー元のプロジェクトID'),
+});
+
+const DeleteProjectSchema = z.object({
+  projectId: z.string().describe('削除するプロジェクトID'),
+});
+
 class RequirementsMCPServer {
   private server: Server;
   private storage: RequirementsStorage;
@@ -231,6 +247,16 @@ class RequirementsMCPServer {
             return await this.handleApplyFixes(args);
           case 'rollback_fixes':
             return await this.handleRollbackFixes(args);
+          case 'list_projects':
+            return await this.handleListProjects();
+          case 'get_current_project':
+            return await this.handleGetCurrentProject();
+          case 'switch_project':
+            return await this.handleSwitchProject(args);
+          case 'create_project':
+            return await this.handleCreateProject(args);
+          case 'delete_project':
+            return await this.handleDeleteProject(args);
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
@@ -452,6 +478,58 @@ class RequirementsMCPServer {
             changeSetId: { type: 'string', description: 'ロールバックするChangeSetのID' },
           },
           required: ['changeSetId'],
+        },
+      },
+      {
+        name: 'list_projects',
+        description: 'すべてのプロジェクトの一覧を取得します。各プロジェクトのID、名前、ファイルパス、要求数、更新日時が含まれます。',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
+        name: 'get_current_project',
+        description: '現在アクティブなプロジェクトの情報を取得します。プロジェクト名、ID、要求数、作成日時などの詳細が含まれます。',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
+        name: 'switch_project',
+        description: '別のプロジェクトに切り替えます。以降の操作は切り替え先のプロジェクトに対して実行されます。',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            projectId: { type: 'string', description: '切り替え先のプロジェクトID' },
+          },
+          required: ['projectId'],
+        },
+      },
+      {
+        name: 'create_project',
+        description: '新しいプロジェクトを作成します。既存プロジェクトからコピーすることも可能です。',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            projectId: { type: 'string', description: '新規プロジェクトのID（[a-z0-9-]+）' },
+            projectName: { type: 'string', description: 'プロジェクト名' },
+            description: { type: 'string', description: 'プロジェクトの説明' },
+            copyFrom: { type: 'string', description: 'コピー元のプロジェクトID' },
+          },
+          required: ['projectId', 'projectName'],
+        },
+      },
+      {
+        name: 'delete_project',
+        description: 'プロジェクトを削除します。デフォルトプロジェクト（requirements）は削除できません。',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            projectId: { type: 'string', description: '削除するプロジェクトID' },
+          },
+          required: ['projectId'],
         },
       },
     ];
@@ -1109,6 +1187,118 @@ class RequirementsMCPServer {
                 `**影響要求数**: ${changeSet.impacted.length}件\n` +
                 `**ロールバック日時**: ${changeSet.rolledBackAt}\n\n` +
                 `要求が元の状態に戻されました。`,
+        },
+      ],
+    };
+  }
+
+  private async handleListProjects() {
+    const projectManager = this.storage.getProjectManager();
+    const projects = await projectManager.listProjects();
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: `## プロジェクト一覧\n\n` +
+                `合計: ${projects.length}件\n\n` +
+                projects.map(p => {
+                  const marker = p.isCurrent ? '✅ ' : '   ';
+                  return `${marker}**${p.projectName}** (${p.projectId})\n` +
+                         `   - ファイル: ${p.filePath}\n` +
+                         `   - 要求数: ${p.requirementCount}件\n` +
+                         `   - 更新日時: ${new Date(p.updatedAt).toLocaleString('ja-JP')}\n`;
+                }).join('\n'),
+        },
+      ],
+    };
+  }
+
+  private async handleGetCurrentProject() {
+    const projectManager = this.storage.getProjectManager();
+    const project = await projectManager.getCurrentProject();
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: `## 現在のプロジェクト\n\n` +
+                `**プロジェクト名**: ${project.projectName}\n` +
+                `**プロジェクトID**: ${project.projectId}\n` +
+                `**ファイルパス**: ${project.filePath}\n` +
+                `**説明**: ${project.description || 'なし'}\n` +
+                `**要求数**: ${project.requirementCount}件\n` +
+                `**作成日時**: ${new Date(project.createdAt).toLocaleString('ja-JP')}\n` +
+                `**更新日時**: ${new Date(project.updatedAt).toLocaleString('ja-JP')}\n` +
+                `**バージョン**: ${project.version}\n`,
+        },
+      ],
+    };
+  }
+
+  private async handleSwitchProject(args: any) {
+    const params = SwitchProjectSchema.parse(args);
+    const projectManager = this.storage.getProjectManager();
+
+    const previousProjectId = projectManager.getCurrentProjectId();
+    const project = await projectManager.switchProject(params.projectId);
+
+    // ストレージをリロード（新しいプロジェクトのデータを読み込む）
+    await this.storage.initialize();
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: `✅ プロジェクトを切り替えました\n\n` +
+                `**前のプロジェクト**: ${previousProjectId}\n` +
+                `**現在のプロジェクト**: ${project.projectName} (${project.projectId})\n` +
+                `**要求数**: ${project.requirementCount}件\n\n` +
+                `以降の操作は「${project.projectName}」プロジェクトに対して実行されます。`,
+        },
+      ],
+    };
+  }
+
+  private async handleCreateProject(args: any) {
+    const params = CreateProjectSchema.parse(args);
+    const projectManager = this.storage.getProjectManager();
+
+    const project = await projectManager.createProject({
+      projectId: params.projectId,
+      projectName: params.projectName,
+      description: params.description,
+      copyFrom: params.copyFrom,
+    });
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: `✅ プロジェクトを作成しました\n\n` +
+                `**プロジェクト名**: ${project.projectName}\n` +
+                `**プロジェクトID**: ${project.projectId}\n` +
+                `**ファイルパス**: ${project.filePath}\n` +
+                `**説明**: ${project.description || 'なし'}\n` +
+                `**要求数**: ${project.requirementCount}件\n` +
+                (params.copyFrom ? `**コピー元**: ${params.copyFrom}\n` : '') +
+                `\n切り替えるには \`switch_project\` ツールを使用してください。`,
+        },
+      ],
+    };
+  }
+
+  private async handleDeleteProject(args: any) {
+    const params = DeleteProjectSchema.parse(args);
+    const projectManager = this.storage.getProjectManager();
+
+    await projectManager.deleteProject(params.projectId);
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: `✅ プロジェクト「${params.projectId}」を削除しました`,
         },
       ],
     };
