@@ -133,6 +133,7 @@ const SwitchProjectSchema = z.object({
 const CreateProjectSchema = z.object({
   projectId: z.string().describe('新規プロジェクトのID（[a-z0-9-]+）'),
   projectName: z.string().describe('プロジェクト名'),
+  systemName: z.string().optional().describe('対象システムの名称（例: 自動搬送車）'),
   description: z.string().optional().describe('プロジェクトの説明'),
   copyFrom: z.string().optional().describe('コピー元のプロジェクトID'),
 });
@@ -1267,6 +1268,7 @@ class RequirementsMCPServer {
     const project = await projectManager.createProject({
       projectId: params.projectId,
       projectName: params.projectName,
+      systemName: params.systemName,
       description: params.description,
       copyFrom: params.copyFrom,
     });
@@ -1278,6 +1280,7 @@ class RequirementsMCPServer {
           text: `✅ プロジェクトを作成しました\n\n` +
                 `**プロジェクト名**: ${project.projectName}\n` +
                 `**プロジェクトID**: ${project.projectId}\n` +
+                (project.systemName ? `**システム名**: ${project.systemName}\n` : '') +
                 `**ファイルパス**: ${project.filePath}\n` +
                 `**説明**: ${project.description || 'なし'}\n` +
                 `**要求数**: ${project.requirementCount}件\n` +
