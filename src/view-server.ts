@@ -1990,6 +1990,56 @@ app.get('/old', (req, res) => {
       color: rgba(255, 255, 255, 0.8);
     }
 
+    .project-selector {
+      margin-top: 16px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+    }
+
+    .project-selector-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .project-selector select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .project-selector select:hover {
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .project-selector select:focus {
+      outline: none;
+      border-color: var(--secondary);
+      box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.2);
+    }
+
+    .project-badge {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 4px 8px;
+      background: rgba(34, 197, 94, 0.2);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(34, 197, 94, 1);
+    }
+
     .view-list {
       flex: 1;
       overflow-y: auto;
@@ -2180,6 +2230,14 @@ app.get('/old', (req, res) => {
       <div class="sidebar-header">
         <h1>📋 要求管理ビューアー</h1>
         <p>リアルタイム自動更新</p>
+
+        <div class="project-selector">
+          <label class="project-selector-label">📁 プロジェクト</label>
+          <select id="projectSelect">
+            <option value="">読み込み中...</option>
+          </select>
+          <span class="project-badge" id="projectBadge">現在: --</span>
+        </div>
       </div>
       <div class="view-list" id="viewList"></div>
     </div>
@@ -2206,6 +2264,80 @@ app.get('/old', (req, res) => {
     let currentView = null;
     let lastModified = {};
     let eventSource = null;
+    let currentProject = null;
+
+    // プロジェクト一覧を読み込み
+    async function loadProjects() {
+      try {
+        const response = await fetch('/api/projects');
+        const data = await response.json();
+
+        const projectSelect = document.getElementById('projectSelect');
+        projectSelect.innerHTML = '';
+
+        data.projects.forEach(project => {
+          const option = document.createElement('option');
+          option.value = project.projectId;
+          option.textContent = \`\${project.projectName} (\${project.requirementCount}件)\`;
+          if (project.isCurrent) {
+            option.selected = true;
+            currentProject = project;
+            updateProjectBadge(project);
+          }
+          projectSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Failed to load projects:', error);
+      }
+    }
+
+    // プロジェクトバッジを更新
+    function updateProjectBadge(project) {
+      const badge = document.getElementById('projectBadge');
+      badge.textContent = \`現在: \${project.projectName}\`;
+    }
+
+    // プロジェクト切り替え
+    async function switchProject(projectId) {
+      if (!projectId || (currentProject && projectId === currentProject.projectId)) {
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/project/switch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          currentProject = data.project;
+          updateProjectBadge(data.project);
+
+          // 現在のビューをリロード
+          if (currentView) {
+            await loadView(currentView);
+          }
+
+          showRefreshIndicator();
+        } else {
+          alert(\`プロジェクト切り替えエラー: \${data.error}\`);
+        }
+      } catch (error) {
+        console.error('Failed to switch project:', error);
+        alert('プロジェクトの切り替えに失敗しました');
+      }
+    }
+
+    // プロジェクトセレクトのイベントリスナー
+    document.getElementById('projectSelect').addEventListener('change', (e) => {
+      switchProject(e.target.value);
+    });
+
+    // ページ読み込み時にプロジェクト一覧を取得
+    loadProjects();
 
     // ビューボタンを生成
     const viewList = document.getElementById('viewList');
@@ -2550,15 +2682,60 @@ app.get('/api/operation-logs-data', async (req, res) => {
   try {
     const logger = new OperationLogger('./data');
     await logger.initialize();
-    
+
     const logs = logger.getAllLogs();
     const stats = logger.getStatistics();
-    
+
     res.json({ logs, stats });
   } catch (error: any) {
     res.json({ error: error.message, logs: [], stats: {} });
   }
 });
+
+// プロジェクト管理APIエンドポイント
+app.get('/api/projects', async (req, res) => {
+  try {
+    const projectManager = storage.getProjectManager();
+    const projects = await projectManager.listProjects();
+    res.json({ projects });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/project/current', async (req, res) => {
+  try {
+    const projectManager = storage.getProjectManager();
+    const project = await projectManager.getCurrentProject();
+    res.json(project);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/project/switch', express.json(), async (req, res) => {
+  try {
+    const { projectId } = req.body;
+    if (!projectId) {
+      return res.status(400).json({ error: 'projectId is required' });
+    }
+
+    const projectManager = storage.getProjectManager();
+    const project = await projectManager.switchProject(projectId);
+
+    // ストレージをリロード
+    await storage.initialize();
+
+    res.json({
+      success: true,
+      project,
+      message: `プロジェクトを「${project.projectName}」に切り替えました`
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message, success: false });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`\n========================================`);
   console.log(`🌐 要求管理ビューアーを起動しました`);
