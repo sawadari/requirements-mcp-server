@@ -143,10 +143,49 @@ requirements-mcp-server/
 └── package.json
 ```
 
+## MCP Tool Registry（重要）
+
+**新しい機能を追加する前に、必ず既存ツールとの重複をチェックしてください。**
+
+### ツール重複チェック
+
+```
+/tool-check <実装したい機能の説明>
+```
+
+例: `/tool-check 要求のステータスを一括変更したい`
+
+### ツール追加の手順（TDD）
+
+**テスト駆動開発(TDD)により品質を保証します:**
+
+1. **重複確認**: `/tool-check <機能説明>` で既存ツールとの重複をチェック
+2. **レジストリ登録**: `npm run register-tool -- <tool-name> --category <cat>`
+3. **テスト生成**: `npm run generate-tool-test -- <tool-name>`
+4. **RED**: テストケースを編集 → `npm test` で失敗を確認
+5. **GREEN**: `src/index.ts` に実装を追加 → `npm test` で成功を確認
+6. **Refactor**: コードを改善 → `npm test` で再確認
+7. **ドキュメント**: 使用例を `examples/<tool-name>.json` に追加
+8. **検証**: `npm run validate-registry` で整合性チェック
+
+詳細: `docs/TDD-TOOL-DEVELOPMENT.md` を参照
+
+### 現在のツール一覧
+
+**config/tool-registry.json** に16個のツールが登録されています:
+
+- **CRUD Operations** (6): add_requirement, get_requirement, list_requirements, update_requirement, delete_requirement, search_requirements
+- **Analysis & Insights** (2): analyze_impact, get_dependency_graph
+- **Validation & Quality** (3): validate_requirement, validate_all_requirements, get_validation_report
+- **Change Management** (5): propose_change, load_policy, preview_fixes, apply_fixes, rollback_fixes
+
+詳細: `docs/MCP-TOOL-MANAGEMENT.md` を参照
+
 ## カスタムスラッシュコマンド
 
 Claude Code で以下のコマンドが使用可能:
 
+- `/tool-check` - MCP Tool重複チェック（新機能追加前に必須）
 - `/test` - プロジェクト全体のテストを実行
 - `/generate-docs` - コードからドキュメント自動生成
 - `/create-issue` - Agent実行用Issueを対話的に作成

@@ -1,0 +1,388 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-10-24",
+  "description": "MCP Tool Registry - 機能重複を防ぐための中央管理レジストリ",
+  "categories": {
+    "crud": {
+      "name": "CRUD Operations",
+      "description": "基本的な作成・読取・更新・削除操作",
+      "tools": [
+        "add_requirement",
+        "get_requirement",
+        "list_requirements",
+        "update_requirement",
+        "delete_requirement",
+        "search_requirements"
+      ]
+    },
+    "analysis": {
+      "name": "Analysis & Insights",
+      "description": "影響分析・依存関係分析",
+      "tools": [
+        "analyze_impact",
+        "get_dependency_graph"
+      ]
+    },
+    "validation": {
+      "name": "Validation & Quality",
+      "description": "妥当性検証・品質チェック",
+      "tools": [
+        "validate_requirement",
+        "validate_all_requirements",
+        "get_validation_report"
+      ]
+    },
+    "change_management": {
+      "name": "Change Management",
+      "description": "変更提案・修正管理",
+      "tools": [
+        "propose_change",
+        "load_policy",
+        "preview_fixes",
+        "apply_fixes",
+        "rollback_fixes"
+      ]
+    }
+  },
+  "tools": {
+    "add_requirement": {
+      "name": "add_requirement",
+      "category": "crud",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "新しい要求を追加します",
+      "useCases": [
+        "ステークホルダー要求の追加",
+        "システム要求の追加",
+        "機能要求の追加"
+      ],
+      "inputs": ["title", "description", "priority", "category", "tags", "dependencies", "author", "assignee"],
+      "outputs": ["Requirement"],
+      "relatedTools": ["update_requirement", "validate_requirement"],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-01-15",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "get_requirement": {
+      "name": "get_requirement",
+      "category": "crud",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "指定されたIDの要求を取得します",
+      "useCases": [
+        "特定要求の詳細確認"
+      ],
+      "inputs": ["id"],
+      "outputs": ["Requirement"],
+      "relatedTools": ["list_requirements", "search_requirements"],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-01-15",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "list_requirements": {
+      "name": "list_requirements",
+      "category": "crud",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "すべての要求の一覧を取得します",
+      "useCases": [
+        "全要求の俯瞰",
+        "統計情報の取得"
+      ],
+      "inputs": [],
+      "outputs": ["Requirement[]"],
+      "relatedTools": ["search_requirements", "get_requirement"],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-01-15",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "update_requirement": {
+      "name": "update_requirement",
+      "category": "crud",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "既存の要求を更新します",
+      "useCases": [
+        "ステータス変更",
+        "優先度変更",
+        "説明の更新"
+      ],
+      "inputs": ["id", "title?", "description?", "status?", "priority?", "category?", "tags?", "dependencies?", "assignee?"],
+      "outputs": ["Requirement"],
+      "relatedTools": ["get_requirement", "validate_requirement"],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-01-15",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "delete_requirement": {
+      "name": "delete_requirement",
+      "category": "crud",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "指定されたIDの要求を削除します",
+      "useCases": [
+        "不要な要求の削除",
+        "重複要求の削除"
+      ],
+      "inputs": ["id"],
+      "outputs": ["boolean"],
+      "relatedTools": ["get_requirement"],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-01-15",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "search_requirements": {
+      "name": "search_requirements",
+      "category": "crud",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "条件を指定して要求を検索します",
+      "useCases": [
+        "ステータスで絞り込み",
+        "優先度で絞り込み",
+        "タグで絞り込み",
+        "全文検索"
+      ],
+      "inputs": ["status?", "priority?", "category?", "tags?", "searchText?"],
+      "outputs": ["Requirement[]"],
+      "relatedTools": ["list_requirements", "get_requirement"],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-01-15",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "analyze_impact": {
+      "name": "analyze_impact",
+      "category": "analysis",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "要求の変更が他の要求に与える影響を分析します",
+      "useCases": [
+        "変更の影響範囲確認",
+        "リスク評価"
+      ],
+      "inputs": ["id"],
+      "outputs": ["ImpactAnalysis"],
+      "relatedTools": ["get_dependency_graph", "propose_change"],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-01-15",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "get_dependency_graph": {
+      "name": "get_dependency_graph",
+      "category": "analysis",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "要求の依存関係グラフを取得します",
+      "useCases": [
+        "依存関係の可視化",
+        "循環参照の検出"
+      ],
+      "inputs": ["format?"],
+      "outputs": ["DependencyGraph"],
+      "relatedTools": ["analyze_impact"],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-01-15",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "validate_requirement": {
+      "name": "validate_requirement",
+      "category": "validation",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "単一要求の妥当性を検証します",
+      "useCases": [
+        "要求追加前の妥当性チェック",
+        "品質スコアの確認"
+      ],
+      "inputs": ["id", "useLLM?"],
+      "outputs": ["ValidationResult"],
+      "relatedTools": ["validate_all_requirements", "get_validation_report"],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-01-15",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "validate_all_requirements": {
+      "name": "validate_all_requirements",
+      "category": "validation",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "すべての要求の妥当性を検証します",
+      "useCases": [
+        "定期的な品質チェック",
+        "リリース前の検証"
+      ],
+      "inputs": ["useLLM?", "updateMetrics?"],
+      "outputs": ["Map<string, ValidationResult>"],
+      "relatedTools": ["validate_requirement", "get_validation_report"],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-01-15",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "get_validation_report": {
+      "name": "get_validation_report",
+      "category": "validation",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "検証結果のレポートを取得します",
+      "useCases": [
+        "品質サマリーの確認",
+        "違反の詳細確認"
+      ],
+      "inputs": ["format?"],
+      "outputs": ["ValidationReport"],
+      "relatedTools": ["validate_all_requirements"],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-01-15",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "propose_change": {
+      "name": "propose_change",
+      "category": "change_management",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "要求の変更提案を作成します",
+      "useCases": [
+        "変更提案の作成",
+        "影響分析を含む提案"
+      ],
+      "inputs": ["requirementId", "proposedChanges", "reason"],
+      "outputs": ["ChangeProposal"],
+      "relatedTools": ["analyze_impact", "preview_fixes"],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-01-15",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "load_policy": {
+      "name": "load_policy",
+      "category": "change_management",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "修正ポリシーを読み込みます",
+      "useCases": [
+        "自動修正ルールの設定",
+        "品質基準の適用"
+      ],
+      "inputs": ["policyPath"],
+      "outputs": ["FixPolicy"],
+      "relatedTools": ["preview_fixes", "apply_fixes"],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-01-15",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "preview_fixes": {
+      "name": "preview_fixes",
+      "category": "change_management",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "修正内容をプレビューします",
+      "useCases": [
+        "自動修正の事前確認",
+        "変更差分の確認"
+      ],
+      "inputs": ["policyPath?"],
+      "outputs": ["ChangeSet"],
+      "relatedTools": ["load_policy", "apply_fixes"],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-01-15",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "apply_fixes": {
+      "name": "apply_fixes",
+      "category": "change_management",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "修正を適用します",
+      "useCases": [
+        "自動修正の実行",
+        "一括修正の適用"
+      ],
+      "inputs": ["changeSetId"],
+      "outputs": ["ApplyResult"],
+      "relatedTools": ["preview_fixes", "rollback_fixes"],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-01-15",
+          "changes": "初回実装"
+        }
+      ]
+    },
+    "rollback_fixes": {
+      "name": "rollback_fixes",
+      "category": "change_management",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "適用した修正をロールバックします",
+      "useCases": [
+        "誤った修正の取り消し",
+        "変更の巻き戻し"
+      ],
+      "inputs": ["changeSetId"],
+      "outputs": ["RollbackResult"],
+      "relatedTools": ["apply_fixes"],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2025-01-15",
+          "changes": "初回実装"
+        }
+      ]
+    }
+  }
+}

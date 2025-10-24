@@ -18,7 +18,11 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build",
     "view-server": "tsx src/view-server.ts",
-    "view-server:watch": "nodemon --watch src --ext ts --ext ts --exec tsx src/view-server.ts"
+    "view-server:watch": "nodemon --watch src --ext ts --ext ts --exec tsx src/view-server.ts",
+    "register-tool": "tsx scripts/register-tool.ts",
+    "tool-check": "echo 'Use /tool-check command in Claude Code instead'",
+    "generate-tool-test": "tsx scripts/generate-tool-test.ts",
+    "validate-registry": "tsx scripts/validate-registry.ts"
   },
   "keywords": [
     "mcp",
