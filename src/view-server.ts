@@ -17,6 +17,8 @@ import { TreeBuilder } from './tree-view.js';
 import { RequirementValidator } from './validator.js';
 import { ValidationEngine } from './validation/validation-engine.js';
 import { createChatAssistant } from './ai-chat-assistant.js';
+import { createEnhancedChatAssistant, EnhancedAIChatAssistant } from './enhanced-chat-assistant.js';
+import { createMCPChatAssistant, MCPChatAssistant } from './mcp-chat-assistant.js';
 
 const app = express();
 const PORT = 5002;
@@ -26,14 +28,31 @@ const validator = new RequirementValidator(storage);
 // ValidationEngine for AI Chat Assistant
 let validationEngine: ValidationEngine;
 let chatAssistant: ReturnType<typeof createChatAssistant>;
+let enhancedChatAssistant: EnhancedAIChatAssistant;
+let enhancedChatReady = false;
 let chatAssistantReady = false;
+let mcpChatAssistant: MCPChatAssistant | null = null;
+let mcpChatReady = false;
 
 // Initialize ValidationEngine and AI Chat Assistant asynchronously
 const initChatAssistant = (async () => {
   validationEngine = await ValidationEngine.create();
   chatAssistant = createChatAssistant(storage, validationEngine);
+  enhancedChatAssistant = createEnhancedChatAssistant(storage, validationEngine);
+  enhancedChatReady = true;
   chatAssistantReady = true;
   console.log('✅ AI Chat Assistant initialized');
+  console.log('✅ Enhanced Chat Assistant (Orchestrator) initialized');
+
+  // Initialize MCP Chat Assistant (fallback to Enhanced if it fails)
+  try {
+    mcpChatAssistant = await createMCPChatAssistant();
+    mcpChatReady = true;
+    console.log('✅ MCP Chat Assistant initialized');
+  } catch (error: any) {
+    console.warn('⚠️  MCP Chat Assistant initialization failed:', error.message);
+    console.warn('    Falling back to Enhanced Chat Assistant');
+  }
 })();
 
 // Helper to ensure chat assistant is ready
@@ -744,7 +763,7 @@ app.get('/', (req, res) => {
       width: 400px;
       background: var(--surface);
       border-left: 1px solid var(--border);
-      display: flex;
+      display: none; /* デフォルトで非表示 - オプション機能として将来的に有効化可能 */
       flex-direction: column;
       overflow: hidden;
       position: relative;
@@ -2347,7 +2366,7 @@ app.get('/api/watch', (req, res) => {
   });
 });
 
-// チャットAPIエンドポイント - MCPツール統合版
+// チャットAPIエンドポイント - Enhanced Chat Assistant (Orchestrator統合版)
 app.post('/api/chat', express.json(), async (req, res) => {
   try {
     const { message } = req.body;
@@ -2358,11 +2377,22 @@ app.post('/api/chat', express.json(), async (req, res) => {
       });
     }
 
-    // AIチャットアシスタントの準備完了を待つ
-    const assistant = await ensureChatAssistantReady();
-    const response = await assistant.chat(message);
-
-    res.json({ response });
+    // MCP Chat Assistant (highest priority)
+    if (mcpChatReady && mcpChatAssistant && mcpChatAssistant.isAvailable()) {
+      console.log('[Chat] Using MCP Chat Assistant');
+      const response = await mcpChatAssistant.chat(message);
+      res.json({ response });
+    } else if (enhancedChatReady && enhancedChatAssistant.isAvailable()) {
+      console.log('[Chat] Using Enhanced Chat Assistant (Orchestrator)');
+      const response = await enhancedChatAssistant.chat(message);
+      res.json({ response });
+    } else {
+      // Fallback to basic chat assistant
+      console.log('[Chat] Fallback to Basic Chat Assistant');
+      const assistant = await ensureChatAssistantReady();
+      const response = await assistant.chat(message);
+      res.json({ response });
+    }
   } catch (error: any) {
     console.error('Chat API error:', error);
     res.status(500).json({

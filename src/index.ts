@@ -26,6 +26,8 @@ import { ChangeEngine } from './fix-engine/change-engine.js';
 import type { FixPolicy, ChangeSet } from './fix-engine/types.js';
 import { toRequirementRecord, toFixEngineRequirements, toStorageRequirement } from './fix-engine/types.js';
 import { createLogger } from './common/logger.js';
+import { ValidationTools } from './tools/validation-tools.js';
+import { BatchTools } from './tools/batch-tools.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -136,6 +138,8 @@ class RequirementsMCPServer {
   private changeEngine: ChangeEngine;
   private changeSets: Map<string, ChangeSet> = new Map();
   private currentPolicy: FixPolicy | null = null;
+  private validationTools: ValidationTools | null = null;
+  private batchTools: BatchTools;
 
   constructor() {
     this.storage = new RequirementsStorage('./data');
@@ -144,11 +148,13 @@ class RequirementsMCPServer {
     this.logger = new OperationLogger('./data');
     this.validator = new RequirementValidator(this.storage);
     this.changeEngine = new ChangeEngine();
+    this.batchTools = new BatchTools(this.storage);
 
     // ValidationEngineを非同期で初期化
     ValidationEngine.create().then(engine => {
       this.validationEngine = engine;
       logger.info('ValidationEngine initialized');
+      this.validationTools = new ValidationTools(this.storage, engine);
     }).catch(error => {
       logger.error('Failed to initialize ValidationEngine', error);
     });
