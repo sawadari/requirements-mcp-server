@@ -17,7 +17,7 @@
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build",
-    "view-server": "tsx src/view-server.ts",
+    "view-server": "tsx --no-cache src/view-server.ts",
     "view-server:watch": "nodemon --watch src --ext ts --ext ts --exec tsx src/view-server.ts",
     "register-tool": "tsx scripts/register-tool.ts",
     "tool-check": "echo 'Use /tool-check command in Claude Code instead'",

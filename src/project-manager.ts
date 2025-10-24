@@ -11,6 +11,7 @@ const logger = createLogger('ProjectManager');
 export interface ProjectMetadata {
   projectName: string;
   projectId: string;
+  systemName?: string; // 対象システムの名称（例: 自動搬送車）
   description?: string;
   createdAt: string;
   updatedAt: string;
@@ -26,6 +27,7 @@ export interface ProjectInfo extends ProjectMetadata {
 export interface ProjectConfig {
   projectId: string;
   projectName: string;
+  systemName?: string; // 対象システムの名称
   description?: string;
   copyFrom?: string; // 既存プロジェクトからコピー
 }
@@ -179,6 +181,7 @@ export class ProjectManager {
     const metadata: ProjectMetadata = {
       projectName: config.projectName,
       projectId: config.projectId,
+      systemName: config.systemName,
       description: config.description,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -315,6 +318,7 @@ export class ProjectManager {
     const metadata: ProjectMetadata = {
       projectName: 'Default Project',
       projectId: DEFAULT_PROJECT_ID,
+      systemName: '自動搬送車',
       description: 'デフォルトの要求管理プロジェクト',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

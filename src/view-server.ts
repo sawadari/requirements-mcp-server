@@ -1,5 +1,6 @@
 /**
  * View Server - ブラウザでビューを表示するWebサーバー
+ *
  */
 
 import dotenv from 'dotenv';
@@ -1075,7 +1076,10 @@ app.get('/', (req, res) => {
         data.projects.forEach(project => {
           const option = document.createElement('option');
           option.value = project.projectId;
-          option.textContent = \`\${project.projectName} (\${project.requirementCount}件)\`;
+          const displayName = project.systemName
+            ? \`\${project.systemName} - \${project.projectName} (\${project.requirementCount}件)\`
+            : \`\${project.projectName} (\${project.requirementCount}件)\`;
+          option.textContent = displayName;
           if (project.isCurrent) {
             option.selected = true;
             currentProject = project;
@@ -1090,7 +1094,10 @@ app.get('/', (req, res) => {
 
     function updateProjectBadge(project) {
       const badge = document.getElementById('projectBadge');
-      badge.textContent = \`現在: \${project.projectName}\`;
+      const displayText = project.systemName
+        ? \`現在: \${project.systemName} - \${project.projectName}\`
+        : \`現在: \${project.projectName}\`;
+      badge.textContent = displayText;
     }
 
     async function switchProject(projectId) {
@@ -2362,7 +2369,10 @@ app.get('/old', (req, res) => {
         data.projects.forEach(project => {
           const option = document.createElement('option');
           option.value = project.projectId;
-          option.textContent = \`\${project.projectName} (\${project.requirementCount}件)\`;
+          const displayName = project.systemName
+            ? \`\${project.systemName} - \${project.projectName} (\${project.requirementCount}件)\`
+            : \`\${project.projectName} (\${project.requirementCount}件)\`;
+          option.textContent = displayName;
           if (project.isCurrent) {
             option.selected = true;
             currentProject = project;
@@ -2378,7 +2388,10 @@ app.get('/old', (req, res) => {
     // プロジェクトバッジを更新
     function updateProjectBadge(project) {
       const badge = document.getElementById('projectBadge');
-      badge.textContent = \`現在: \${project.projectName}\`;
+      const displayText = project.systemName
+        ? \`現在: \${project.systemName} - \${project.projectName}\`
+        : \`現在: \${project.projectName}\`;
+      badge.textContent = displayText;
     }
 
     // プロジェクト切り替え
