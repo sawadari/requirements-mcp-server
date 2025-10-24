@@ -1,13 +1,16 @@
 ---
 title: 要求管理MCPサーバー
-description: 要求の品質問題を自動検出・自動修正。レビュー前の品質チェックを機械化するエンジニアリングツール。
+description: AIと協同で開発要求を作成する新時代。人間は判断、AIは処理。要求品質を常にレビュー済み水準に保つ共同作業環境。
 ---
 
-# 要求の品質問題を、レビュー前に自動検出・修正
+# 開発要求をAIと協同で作成する新時代
 
-**主語がない？曖昧な表現？冗長な文章？抽象度がバラバラ？**
+**AIをつかって要求を書く。**
 
-レビューで指摘される前に、機械的にチェック・修正できます。
+- 人間は**要望を出し、判断を行う**
+- AIは**要求の更新・分解・統合・分析**を担う
+- 要求は**構造化データ**に変換され、MCPサーバーで管理される
+- AIによって、**要求管理の当たり前品質が機械的に維持される**
 
 <div style="text-align: center; margin: 3rem 0;">
   <h2 style="font-size: 2.5rem; color: #2563eb;">エラー <span style="color: #dc2626;">29件</span> → <span style="color: #16a34a;">0件</span></h2>
@@ -17,7 +20,75 @@ description: 要求の品質問題を自動検出・自動修正。レビュー�
   </p>
 </div>
 
-[無料で試す](#はじめ方) ・ [機能を見る](#できること)
+[無料で試す](#はじめ方) ・ [機能を見る](#主な機能)
+
+---
+
+## 💡 要求管理MCPサーバーとは
+
+人間の判断とAIの処理が協調する**「要求の共同作業環境」**。
+
+要求をテキストではなく**構造化データ**として扱い、AIが自動で検証・修正・最適化を行うことで、要求品質を常に**"レビュー済み水準"**に保ちます。
+
+---
+
+## 🌐 AIがつくる要求の品質循環
+
+<div style="padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; margin: 2rem 0;">
+
+### 1️⃣ 要望入力（人間）
+人間が目的・意図・条件を自然言語で記述。
+
+### 2️⃣ 構造化と検証（AI）
+AIが要求を分解し、階層・粒度・整合性を自動確認。
+
+### 3️⃣ 修正と統合（AI）
+曖昧表現や重複を自動修正し、要求全体を最適化。
+
+### 4️⃣ 判断と承認（人間）
+AIが提示した改善案を人間が採用・判断。
+
+### 5️⃣ レポートと継続改善（AI）
+履歴・スコアを生成し、品質変化を記録。
+
+<p style="text-align: center; font-size: 1.3rem; margin-top: 2rem; font-weight: bold;">
+この反復が、レビュー前からレビュー済み水準を実現します。
+</p>
+
+</div>
+
+---
+
+## 📊 機械的に生まれる効果
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
+
+<div style="padding: 1.5rem; background: #f0fdf4; border-radius: 8px; text-align: center;">
+<h3 style="color: #16a34a; font-size: 2rem; margin: 0;">エラーゼロ</h3>
+<p style="margin: 0.5rem 0; color: #666;">初期29件 → 最終0件</p>
+</div>
+
+<div style="padding: 1.5rem; background: #fef3c7; border-radius: 8px; text-align: center;">
+<h3 style="color: #f59e0b; font-size: 2rem; margin: 0;">警告半減</h3>
+<p style="margin: 0.5rem 0; color: #666;">79件 → 33件</p>
+</div>
+
+<div style="padding: 1.5rem; background: #dbeafe; border-radius: 8px; text-align: center;">
+<h3 style="color: #2563eb; font-size: 2rem; margin: 0;">合格率2倍</h3>
+<p style="margin: 0.5rem 0; color: #666;">3.1% → 6.3%</p>
+</div>
+
+<div style="padding: 1.5rem; background: #fce7f3; border-radius: 8px; text-align: center;">
+<h3 style="color: #db2777; font-size: 2rem; margin: 0;">品質スコア</h3>
+<p style="margin: 0.5rem 0; color: #666;">平均 85.0 / 100</p>
+</div>
+
+</div>
+
+<p style="text-align: center; font-size: 1.1rem; margin-top: 2rem; color: #666;">
+改善はAIによる自動ループで継続され、<br>
+<strong>人間は判断と設計意図の確認に集中できます。</strong>
+</p>
 
 ---
 
@@ -169,7 +240,75 @@ description: 要求の品質問題を自動検出・自動修正。レビュー�
 
 ---
 
-## 🔧 仕組み
+## 🧩 仕組みとアーキテクチャ
+
+```
+要望入力 → 構造化 → 自動検証 → 自動修正 → レポート化
+```
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
+
+<div style="padding: 1.5rem; border: 2px solid #e5e7eb; border-radius: 8px;">
+<h4>🔍 Validation Engine</h4>
+<p>構造・整合性・スタイルをAIが解析</p>
+<ul style="font-size: 0.9rem; color: #666;">
+  <li>階層構造の妥当性</li>
+  <li>MECE原則の検証</li>
+  <li>曖昧語・冗長表現の検出</li>
+</ul>
+</div>
+
+<div style="padding: 1.5rem; border: 2px solid #e5e7eb; border-radius: 8px;">
+<h4>🔧 Fix Engine</h4>
+<p>修正案を生成し、安全に反映（ロールバック可）</p>
+<ul style="font-size: 0.9rem; color: #666;">
+  <li>Strict/Suggest/Assistモード</li>
+  <li>トランザクション境界保証</li>
+  <li>完全な可逆性</li>
+</ul>
+</div>
+
+<div style="padding: 1.5rem; border: 2px solid #e5e7eb; border-radius: 8px;">
+<h4>📚 Ontology Manager</h4>
+<p>段階・粒度ルールを外部スキーマで管理</p>
+<ul style="font-size: 0.9rem; color: #666;">
+  <li>カスタマイズ可能な段階定義</li>
+  <li>プロジェクト別の粒度ルール</li>
+  <li>派生関係の自動検証</li>
+</ul>
+</div>
+
+<div style="padding: 1.5rem; border: 2px solid #e5e7eb; border-radius: 8px;">
+<h4>📊 Impact Analyzer</h4>
+<p>変更の波及影響を自動分析</p>
+<ul style="font-size: 0.9rem; color: #666;">
+  <li>依存関係の追跡</li>
+  <li>影響範囲の可視化</li>
+  <li>リスク評価</li>
+</ul>
+</div>
+
+</div>
+
+<p style="text-align: center; font-size: 1.2rem; margin-top: 2rem; padding: 1rem; background: #f0f9ff; border-radius: 8px;">
+これらが連動して、<strong>AIによる"要求の自動進化"</strong>を実現します。
+</p>
+
+---
+
+## ⚙️ 主な機能
+
+| 区分 | 内容 |
+|------|------|
+| **要求管理** | 要求の追加・更新・追跡をAIが補助 |
+| **検証** | 階層／抽象度／MECE／曖昧語などを自動チェック |
+| **修正** | Strict／Suggest／Assist モードで自動または提案修正 |
+| **レポート** | 品質スコア・履歴・改善結果を自動生成 |
+| **連携** | Claude CodeなどMCP対応エディタから操作可能 |
+
+---
+
+## 🔧 詳細な検証項目
 
 ### 3ステップで品質チェックを自動化
 
