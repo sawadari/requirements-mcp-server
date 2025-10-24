@@ -2729,27 +2729,22 @@ app.get('/api/requirement/:id/relations', async (req, res) => {
     const requirement = await storage.getRequirement(id);
 
     if (!requirement) {
-      res.json({ error: '要求が見つかりません', parents: [], children: [] });
-      return;
+      return res.json({ error: '要求が見つかりません', parents: [], children: [] });
     }
 
     const allRequirements = await storage.getAllRequirements();
 
-    // 上位要求を取得（この要求がdependencies/refinesに含むもの、またはparentIdで指定されているもの）
-    const parents = allRequirements.filter(r =>
-      requirement.dependencies.includes(r.id) ||
-      (requirement.refines && requirement.refines.includes(r.id)) ||
-      requirement.parentId === r.id
-    );
+    // 上位要求を取得（この要求がrefinesに含むもの）
+    const refines = requirement.refines || [];
+    const parents = allRequirements.filter(r => refines.includes(r.id));
 
-    // 下位要求を取得（この要求をdependencies/refinesに含む、またはparentIdとして指定しているもの）
-    const children = allRequirements.filter(r =>
-      r.dependencies.includes(id) ||
-      (r.refines && r.refines.includes(id)) ||
-      r.parentId === id
-    );
+    // 下位要求を取得（この要求をrefinesに含むもの）
+    const children = allRequirements.filter(r => {
+      const rRefines = r.refines || [];
+      return rRefines.includes(id);
+    });
 
-    res.json({
+    return res.json({
       parents: parents.map(r => ({
         id: r.id,
         title: r.title,
@@ -2768,7 +2763,8 @@ app.get('/api/requirement/:id/relations', async (req, res) => {
       }))
     });
   } catch (error: any) {
-    res.json({ error: error.message, parents: [], children: [] });
+    console.error('[ERROR] /api/requirement/:id/relations:', error);
+    return res.json({ error: error.message, parents: [], children: [] });
   }
 });
 
