@@ -10,8 +10,11 @@ description: 要求の品質問題を自動検出・自動修正。レビュー�
 レビューで指摘される前に、機械的にチェック・修正できます。
 
 <div style="text-align: center; margin: 3rem 0;">
-  <h2 style="font-size: 2.5rem; color: #2563eb;">エラー 29件 → <span style="color: #16a34a;">0件</span></h2>
+  <h2 style="font-size: 2.5rem; color: #2563eb;">エラー <span style="color: #dc2626;">29件</span> → <span style="color: #16a34a;">0件</span></h2>
   <h2 style="font-size: 2rem; color: #666;">実プロジェクトでの検証結果</h2>
+  <p style="margin-top: 1.5rem; font-size: 1.2rem; color: #666;">
+    <strong>扇風機プロジェクト:</strong> エラー <span style="color: #dc2626;">3件→0件</span> | 警告 <span style="color: #f59e0b;">9件→1件</span> | 合格率 <span style="color: #16a34a;">75%→100%</span>
+  </p>
 </div>
 
 [無料で試す](#はじめ方) ・ [機能を見る](#できること)
@@ -119,12 +122,14 @@ description: 要求の品質問題を自動検出・自動修正。レビュー�
 
 ## 📈 実プロジェクトでの検証結果
 
-### 検証環境
+### プロジェクト1: 自律移動ロボット
+
+**検証環境:**
 - 要求件数: 約32件
 - ドメイン: 組込みシステム（自律移動ロボット）
 - 実施日: 2025年10月
 
-### 検出・修正実績
+**検出・修正実績:**
 
 | 検証項目 | 検出数 | 修正数 |
 |---------|-------|-------|
@@ -137,6 +142,30 @@ description: 要求の品質問題を自動検出・自動修正。レビュー�
 | **単一性欠如（E5）** | 2件 | 焦点絞り込み |
 
 > 📊 [詳細レポート](https://github.com/sawadari/requirements-mcp-server/blob/main/VALIDATION-SUMMARY.md) | [改善ログ](https://github.com/sawadari/requirements-mcp-server/blob/main/IMPROVEMENT-REPORT.md)
+
+### プロジェクト2: 扇風機システム
+
+**検証環境:**
+- 要求件数: 12件 → 15件（改善時に3件追加）
+- ドメイン: 家電製品（扇風機）
+- 実施日: 2025年10月
+
+**検出・修正実績:**
+
+| 検証項目 | Before | After | 改善 |
+|---------|--------|-------|------|
+| **エラー件数** | 3件（25.0%） | 0件（0%） | **-100%** |
+| **警告件数** | 9件（75.0%） | 1件（6.7%） | **-88.9%** |
+| **合格率** | 75.0% | 100.0% | **+25%** |
+| **タグ設定率** | 33.3% | 100.0% | **+200%** |
+
+**主な改善内容:**
+- ✅ 曖昧な表現の具体化（「いい感じ」→「直感的に操作できる」）
+- ✅ 複合要求の分割（8機能混在→4つの独立要求）
+- ✅ TODOプレースホルダーの排除（具体的な機能仕様に置換）
+- ✅ 循環参照の解消（自己参照を正しい階層関係に修正）
+
+> 📊 [詳細レポート：FAN-VALIDATION-COMPARISON.md](https://github.com/sawadari/requirements-mcp-server/blob/main/docs/FAN-VALIDATION-COMPARISON.md)
 
 ---
 
@@ -274,7 +303,99 @@ npx tsx validate-requirements.ts
 
 ---
 
-## 🎓 実例：検出と修正提案
+## 🎯 具体例：扇風機プロジェクト
+
+実際のプロジェクトで、どのように要求品質が改善されたかを見てみましょう。
+
+### Before: 品質に問題がある要求
+
+<div style="padding: 1.5rem; background: #fef2f2; border-left: 4px solid #dc2626; margin: 1rem 0;">
+
+**STK-001: いい感じにする**
+```
+説明: 使いやすくて安全
+タグ: なし
+```
+
+❌ **問題点:**
+- 「いい感じ」は主観的で測定不可能
+- 説明が具体性に欠ける（8文字のみ）
+- タグが設定されていない
+
+</div>
+
+<div style="padding: 1.5rem; background: #fef2f2; border-left: 4px solid #dc2626; margin: 1rem 0;">
+
+**FUNC-004: TODO: あとで考える**
+```
+説明: TODO
+dependencies: [FUNC-004]  # 自己参照による循環依存!
+```
+
+❌ **問題点:**
+- プレースホルダーとして残されている
+- 循環参照（自分自身に依存）
+- 実装不可能
+
+</div>
+
+### After: 改善された要求
+
+<div style="padding: 1.5rem; background: #f0fdf4; border-left: 4px solid #16a34a; margin: 1rem 0;">
+
+**STK-001: 使いやすい操作性**
+```
+説明: ユーザーが直感的に操作できるシンプルなインターフェースを提供する必要がある
+タグ: [ユーザビリティ, 操作性]
+```
+
+✅ **改善ポイント:**
+- 「いい感じ」→「使いやすい操作性」と具体化
+- 「直感的」「シンプル」という測定可能な基準を追加
+- 適切なタグを設定
+
+</div>
+
+<div style="padding: 1.5rem; background: #f0fdf4; border-left: 4px solid #16a34a; margin: 1rem 0;">
+
+**FUNC-004: 電源ボタン長押し検出**
+```
+説明: 電源ボタンを2秒間長押しした際に電源オフを実行する
+タグ: [ボタン, 長押し, 電源制御]
+refines: [SYS-003]
+```
+
+✅ **改善ポイント:**
+- TODOを具体的な機能に置き換え
+- 数値基準を明示（2秒間）
+- 実装可能な粒度に分割
+- 正しい階層関係を設定
+
+</div>
+
+### 改善効果（定量データ）
+
+| 指標 | Before | After | 改善率 |
+|------|--------|-------|--------|
+| **エラー件数** | 3件 | 0件 | **-100%** ✨ |
+| **警告件数** | 9件 | 1件 | **-88.9%** |
+| **合格率** | 75.0% | 100.0% | **+25%** |
+| **タグ設定率** | 33.3% | 100.0% | **+200%** |
+| **平均説明文長** | 42.3文字 | 58.2文字 | +37.6% |
+
+> 📊 [詳細レポート：FAN-VALIDATION-COMPARISON.md](https://github.com/sawadari/requirements-mcp-server/blob/main/docs/FAN-VALIDATION-COMPARISON.md)
+
+### 良い要求の5S原則
+
+1. **Specific（具体的）**: 「いい感じ」ではなく測定可能な基準
+2. **Single（単一責任）**: 1要求=1関心事
+3. **Structured（構造化）**: 明確な階層関係（refines）
+4. **Stable（安定）**: TODOやプレースホルダーなし
+5. **Standardized（標準化）**: 命名規則、タグ、優先度の統一
+
+---
+
+## 🎓 その他の実例：検出と修正提案
 
 ### ケース1: 主語欠如（E3）の検出
 
