@@ -948,6 +948,13 @@ app.get('/', (req, res) => {
         <div class="tree-panel" id="treePanel">
         <div class="panel-header">
           <h1>🌳 Items</h1>
+          <div style="margin-top: 12px; padding: 10px; background: rgba(16, 163, 127, 0.1); border-radius: 8px;">
+            <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block;">📁 プロジェクト</label>
+            <select id="projectSelect" style="width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font-size: 14px; cursor: pointer;">
+              <option value="">読み込み中...</option>
+            </select>
+            <span id="projectBadge" style="display: inline-block; margin-top: 6px; padding: 4px 8px; background: rgba(16, 163, 127, 0.2); border: 1px solid rgba(16, 163, 127, 0.4); border-radius: 4px; font-size: 11px; font-weight: 600; color: var(--primary);">現在: --</span>
+          </div>
         </div>
       <div class="tree-content">
         <div id="treeContainer"></div>
@@ -1054,6 +1061,83 @@ app.get('/', (req, res) => {
   <script>
     let selectedRequirement = null;
     let allRequirements = []; // Store all requirements for search
+    let currentProject = null;
+
+    // プロジェクト管理機能
+    async function loadProjects() {
+      try {
+        const response = await fetch('/api/projects');
+        const data = await response.json();
+
+        const projectSelect = document.getElementById('projectSelect');
+        projectSelect.innerHTML = '';
+
+        data.projects.forEach(project => {
+          const option = document.createElement('option');
+          option.value = project.projectId;
+          option.textContent = \`\${project.projectName} (\${project.requirementCount}件)\`;
+          if (project.isCurrent) {
+            option.selected = true;
+            currentProject = project;
+            updateProjectBadge(project);
+          }
+          projectSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Failed to load projects:', error);
+      }
+    }
+
+    function updateProjectBadge(project) {
+      const badge = document.getElementById('projectBadge');
+      badge.textContent = \`現在: \${project.projectName}\`;
+    }
+
+    async function switchProject(projectId) {
+      if (!projectId || (currentProject && projectId === currentProject.projectId)) {
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/project/switch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          currentProject = data.project;
+          updateProjectBadge(data.project);
+
+          // ツリーとデータをリロード
+          await loadTree();
+
+          // 詳細パネルをクリア
+          selectedRequirement = null;
+          document.getElementById('detailHeader').innerHTML = '<h2>要求を選択してください</h2>';
+          document.getElementById('detailBody').innerHTML = \`
+            <div class="empty-state">
+              <div class="empty-state-icon">📋</div>
+              <div class="empty-state-text">左側のツリーから要求を選択すると、<br>詳細情報が表示されます</div>
+            </div>
+          \`;
+        } else {
+          alert(\`プロジェクト切り替えエラー: \${data.error}\`);
+        }
+      } catch (error) {
+        console.error('Failed to switch project:', error);
+        alert('プロジェクトの切り替えに失敗しました');
+      }
+    }
+
+    document.getElementById('projectSelect').addEventListener('change', (e) => {
+      switchProject(e.target.value);
+    });
+
+    // ページ読み込み時にプロジェクト一覧を取得
+    loadProjects();
 
     // View switching functionality
     document.querySelectorAll('.nav-item').forEach(item => {
