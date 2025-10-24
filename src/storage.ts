@@ -7,6 +7,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { Requirement, ChangeProposal } from './types.js';
 import { ValidationService } from './validation-service.js';
+import { ProjectManager } from './project-manager.js';
 
 export class RequirementsStorage {
   private requirements: Map<string, Requirement> = new Map();
@@ -14,9 +15,25 @@ export class RequirementsStorage {
   private dataDir: string;
   private viewUpdateCallback?: () => Promise<void>;
   private validationService?: ValidationService;
+  private projectManager: ProjectManager;
 
-  constructor(dataDir: string = './data') {
+  constructor(dataDir: string = './data', projectId?: string) {
     this.dataDir = dataDir;
+    this.projectManager = new ProjectManager(dataDir);
+
+    // プロジェクトIDが指定されている場合は切り替え（非同期なのでinitializeで実行）
+    if (projectId) {
+      this.projectManager.switchProject(projectId).catch(error => {
+        console.warn(`Failed to switch to project '${projectId}':`, error.message);
+      });
+    }
+  }
+
+  /**
+   * ProjectManagerを取得
+   */
+  getProjectManager(): ProjectManager {
+    return this.projectManager;
   }
 
   /**
@@ -51,18 +68,22 @@ export class RequirementsStorage {
 
   private async load(): Promise<void> {
     try {
-      const reqPath = path.join(this.dataDir, 'requirements.json');
+      // 現在のプロジェクトのファイルパスを使用
+      const reqPath = this.projectManager.getCurrentProjectFilePath();
       const propPath = path.join(this.dataDir, 'proposals.json');
 
       // Load requirements
       try {
         const reqData = await fs.readFile(reqPath, 'utf-8');
-        const requirements = JSON.parse(reqData, (key, value) => {
+        const data = JSON.parse(reqData, (key, value) => {
           if (key === 'createdAt' || key === 'updatedAt') {
             return new Date(value);
           }
           return value;
         });
+
+        // メタデータを除外して要求のみを読み込み
+        const { _metadata, ...requirements } = data;
         this.requirements = new Map(Object.entries(requirements));
       } catch (error: any) {
         if (error.code !== 'ENOENT') {
@@ -94,13 +115,34 @@ export class RequirementsStorage {
 
   private async save(): Promise<void> {
     try {
-      const reqPath = path.join(this.dataDir, 'requirements.json');
+      // 現在のプロジェクトのファイルパスを使用
+      const reqPath = this.projectManager.getCurrentProjectFilePath();
       const propPath = path.join(this.dataDir, 'proposals.json');
 
       const requirements = Object.fromEntries(this.requirements);
       const proposals = Object.fromEntries(this.proposals);
 
-      await fs.writeFile(reqPath, JSON.stringify(requirements, null, 2));
+      // プロジェクトメタデータを読み込み & 更新
+      let existingData: any = {};
+      try {
+        const existing = await fs.readFile(reqPath, 'utf-8');
+        existingData = JSON.parse(existing);
+      } catch (error: any) {
+        // ファイルが存在しない場合は新規作成
+      }
+
+      // メタデータを更新
+      const metadata = existingData._metadata || {};
+      metadata.updatedAt = new Date().toISOString();
+      metadata.requirementCount = this.requirements.size;
+
+      // メタデータと要求データを結合
+      const dataToSave = {
+        _metadata: metadata,
+        ...requirements
+      };
+
+      await fs.writeFile(reqPath, JSON.stringify(dataToSave, null, 2));
       await fs.writeFile(propPath, JSON.stringify(proposals, null, 2));
 
       // ビュー自動更新コールバックを呼び出し
