@@ -33,7 +33,7 @@ body { color:var(--fg); background:var(--bg); line-height:1.85; }
 .kicker {font-size:.85rem; letter-spacing:.04em; color:var(--muted); text-transform:uppercase;}
 .table {width:100%; border-collapse: collapse; font-size:.98rem;}
 .table th, .table td {border:1px solid var(--line); padding:.65em .7em; vertical-align:top;}
-.table th {background:#f6f8ff; text-align:left;}
+.table th {background:#f6f8ff; text-align:left; color:#111;}
 .callout {border-left:4px solid var(--brand); background:#f6f8ff; padding:12px 14px; border-radius:6px; margin:14px 0;}
 .small {font-size:.92rem; color:var(--muted);}
 summary {cursor:pointer; font-weight:600;}
@@ -50,7 +50,7 @@ summary {cursor:pointer; font-weight:600;}
     <div class="badges">
       <span class="badge">構造化要求（階層/属性/リンク）</span>
       <span class="badge">妥当性チェックと自動修正</span>
-      <span class="badge">JSON/CSVでデータ互換</span>
+      <span class="badge">JSON形式でデータ互換</span>
       <span class="badge">ドメイン別にカスタマイズ</span>
     </div>
     <div class="btns">
@@ -80,7 +80,7 @@ summary {cursor:pointer; font-weight:600;}
       </div>
       <div class="card">
         <h3>互換・拡張</h3>
-        <p>JSON/CSVでツール連携しやすく、語彙/テンプレ/禁止語などの<strong>チェックルール</strong>をプロジェクト別にプロファイル化。</p>
+        <p>JSON形式でツール連携しやすく、語彙/テンプレ/禁止語などの<strong>チェックルール</strong>をプロジェクト別にプロファイル化。</p>
       </div>
     </div>
   </div>
@@ -136,7 +136,7 @@ summary {cursor:pointer; font-weight:600;}
       <li>AIが要求候補を<strong>構造化</strong>（階層・属性・リンク）。</li>
       <li><a href="#validation">妥当性チェック</a>を実施し、修正案を提示。</li>
       <li>人間が<strong>承認</strong>（承認後にトレース・テストリンク更新）。</li>
-      <li>JSON/CSVで保存し、テスト/タスク管理に連携。</li>
+      <li>JSON形式で保存し、テスト/タスク管理に連携。</li>
     </ol>
     <div class="callout">初期起こし・整理・統一・重複排除・テスト観点付与が自動化。<strong>レビュー時間を短縮</strong>し、改版維持を機械化。</div>
   </div>
@@ -148,9 +148,9 @@ summary {cursor:pointer; font-weight:600;}
       <div class="card">
         <h3>データ互換性</h3>
         <ul>
-          <li>入出力：JSON / CSV（Excel/テスト/チケット連携）</li>
+          <li>入出力：JSON形式（テスト/チケット管理ツールと連携）</li>
           <li>リンク：要求ID・親子・参照・テスト・仕様章節に紐付け</li>
-          <li>移行：Word/Excel/CSV取り込み→再構造化を支援</li>
+          <li>移行：既存データからJSON形式への再構造化を支援</li>
         </ul>
       </div>
       <div class="card">
@@ -206,30 +206,28 @@ summary {cursor:pointer; font-weight:600;}
 
     <div class="hr"></div>
 
-    <p><strong>AIは本当に必要？ MCPだけで良い？</strong><br>
+    <p>● <strong>AIは本当に必要？ MCPだけで良い？</strong><br>
     MCPだけだと"置き場"はできますが、<strong>品質維持の自動化</strong>が不在。<br>
     <strong>AI＋MCP</strong>で「作る（人）」と「守る（機械）」を分担するのが最短距離。</p>
 
-    <p><strong>AI協同の未来</strong><br>
+    <p>● <strong>AI協同の未来</strong><br>
     人間は未来を見据えたインプットの創出に集中し、AIはアウトプットの生成・維持・整合を継続実行。<br>
     その結果、<strong>変化に強いデジタル要求資産</strong>が蓄積します。</p>
   </div>
 
-  <!-- FAQ（詳細は折りたたみ） -->
+  <!-- 今後のアップデート予定 -->
   <div class="section">
-    <h2>FAQ</h2>
-    <details>
-      <summary>テストケースとの連携は？</summary>
-      <div class="card"><p>受入条件からテスト観点を抽出し、テストIDと相互リンク。改版時は影響範囲を自動提示します。</p></div>
-    </details>
-    <details>
-      <summary>途中から導入できますか？</summary>
-      <div class="card"><p>既存のWord/Excel/CSVを取り込み、再構造化・用語統一・重複統合を支援します。</p></div>
-    </details>
-    <details>
-      <summary>規格対応（例：ISO 26262など）は？</summary>
-      <div class="card"><p>属性モデル・チェックルールをプロファイル化可能。差分・根拠を含む監査証跡も保持します。</p></div>
-    </details>
+    <h2>今後のアップデート予定</h2>
+    <div class="card">
+      <h3>📋 ReqIF対応</h3>
+      <p>国際標準規格 ReqIF (Requirements Interchange Format) に対応し、他の要求管理ツールとのデータ交換を実現します。</p>
+      <ul>
+        <li><strong>ReqIF エクスポート</strong>：JSON形式からReqIF形式への変換</li>
+        <li><strong>ReqIF インポート</strong>：ReqIF形式からJSON形式への変換</li>
+        <li><strong>対応ツール</strong>：DOORS、Polarion、Codebeamerなど主要ツールとの連携</li>
+      </ul>
+      <p class="small">※ リリース時期は開発状況により変更される場合があります。</p>
+    </div>
   </div>
 
   <!-- クイックスタート -->
@@ -237,7 +235,7 @@ summary {cursor:pointer; font-weight:600;}
     <h2>クイックスタート</h2>
     <ol>
       <li>リポジトリを取得（<a href="https://github.com/sawadari/requirements-mcp-server" target="_blank" rel="noopener">GitHub</a>）。</li>
-      <li>サンプル JSON/CSV を投入。</li>
+      <li>サンプル JSON ファイルを投入。</li>
       <li>チェックルール（語彙/テンプレ/禁止語/番号規則）を設定。</li>
       <li>要望を投入 → 構造化 → 妥当性チェック → 承認。</li>
     </ol>
