@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>{{ page.title }} | {{ site.title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --fg:#111; --muted:#555; --bg:#fff; --card:#fafafa; --line:#eee; --brand:#0b5fff;
+    }
+    * {box-sizing: border-box;}
+    body { color:var(--fg); background:var(--bg); line-height:1.85; margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+    header { background:#f6f8fa; border-bottom:1px solid var(--line); padding:16px 24px; }
+    header h1 { margin:0; font-size:1.5rem; }
+    header h1 a { color:var(--fg); text-decoration:none; }
+    header nav { margin-top:8px; }
+    header nav a { color:var(--brand); margin-right:16px; text-decoration:none; }
+    main { max-width:880px; margin:auto; padding:24px; }
+    article h1 { margin-top:0; }
+    .meta { color:var(--muted); font-size:.92rem; margin-bottom:2rem; }
+    .meta a { color:var(--brand); text-decoration:none; }
+    footer { text-align:center; padding:24px; color:var(--muted); font-size:.92rem; border-top:1px solid var(--line); margin-top:48px; }
+    code { background:#f6f8fa; padding:.2em .45em; border-radius:6px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    pre { background:#f6f8fa; padding:16px; border-radius:8px; overflow-x:auto; }
+    pre code { background:none; padding:0; }
+  </style>
+  <link rel="alternate" type="application/atom+xml" href="{{ site.baseurl }}/feed.xml">
+</head>
+<body>
+<header>
+  <h1><a href="{{ site.baseurl }}/">{{ site.title }}</a></h1>
+  <nav>
+    <a href="{{ site.baseurl }}/">ホーム</a>
+    <a href="{{ site.baseurl }}/blog/">ブログ</a>
+    <a href="https://github.com/sawadari/requirements-mcp-server">GitHub</a>
+  </nav>
+</header>
+
+<main>
+  <article>
+    <h1>{{ page.title }}</h1>
+    <p class="meta">
+      {{ page.date | date: "%Y年%m月%d日" }}
+      {% if page.tags %}
+        · Tags:
+        {% for t in page.tags %}
+          <a href="{{ site.baseurl }}/blog/#tag-{{ t | slugify }}">{{ t }}</a>{% unless forloop.last %}, {% endunless %}
+        {% endfor %}
+      {% endif %}
+    </p>
+    {{ content }}
+  </article>
+</main>
+
+<footer><small>&copy; {{ site.title }}</small></footer>
+</body>
+</html>

@@ -55,6 +55,7 @@ summary {cursor:pointer; font-weight:600;}
     </div>
     <div class="btns">
       <a class="btn" href="https://github.com/sawadari/requirements-mcp-server" target="_blank" rel="noopener">GitHubで見る</a>
+      <a class="btn btn--ghost" href="{{ site.baseurl }}/blog/">ブログ</a>
       <a class="btn btn--ghost" href="#quickstart">クイックスタート</a>
     </div>
   </div>

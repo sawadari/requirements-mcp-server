@@ -1,6 +1,7 @@
 # GitHub Pages Configuration
-title: 要求管理MCPサーバー
-description: エラーゼロ/警告削減/合格率向上を「自動検証×自動修正×原則ベース」で実現
+title: 要求管理 MCP サーバー
+description: AIと人間の協同で、要求を構造化・品質維持し、再利用する基盤
+baseurl: "/requirements-mcp-server"
 theme: jekyll-theme-cayman
 show_downloads: true
 github:
@@ -13,6 +14,7 @@ github:
 plugins:
   - jekyll-relative-links
   - jekyll-seo-tag
+  - jekyll-feed
 
 # Markdown settings
 markdown: kramdown
