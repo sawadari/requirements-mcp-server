@@ -1,731 +1,247 @@
 ---
-title: 要求管理MCPサーバー
-description: AIと協同で開発要求を作成する新時代。人間は判断、AIは処理。要求品質を常にレビュー済み水準に保つ共同作業環境。
+title: 要求管理 MCP サーバー
+layout: default
+description: AIと人間の協同で、要求を構造化し、品質を自動維持。再利用とデータ互換を標準にする要求管理基盤。
 ---
 
-# 開発要求をAIと協同で作成する新時代
-
-**AIをつかって要求を書く。**
-
-- 人間は**要望を出し、判断を行う**
-- AIは**要求の更新・分解・統合・分析**を担う
-- 要求は**構造化データ**に変換され、MCPサーバーで管理される
-- AIによって、**要求管理の当たり前品質が機械的に維持される**
-
-<div style="text-align: center; margin: 3rem 0;">
-  <h2 style="font-size: 2.5rem; color: #2563eb;">エラー <span style="color: #dc2626;">29件</span> → <span style="color: #16a34a;">0件</span></h2>
-  <h2 style="font-size: 2rem; color: #666;">実プロジェクトでの検証結果</h2>
-  <p style="margin-top: 1.5rem; font-size: 1.2rem; color: #666;">
-    <strong>扇風機プロジェクト:</strong> エラー <span style="color: #dc2626;">3件→0件</span> | 警告 <span style="color: #f59e0b;">9件→1件</span> | 合格率 <span style="color: #16a34a;">75%→100%</span>
-  </p>
-</div>
-
-[無料で試す](#はじめ方) ・ [機能を見る](#主な機能)
-
----
-
-## 💡 要求管理MCPサーバーとは
-
-人間の判断とAIの処理が協調する**「要求の共同作業環境」**。
-
-要求をテキストではなく**構造化データ**として扱い、AIが自動で検証・修正・最適化を行うことで、要求品質を常に**"レビュー済み水準"**に保ちます。
-
----
-
-## 🌐 AIがつくる要求の品質循環
-
-<div style="padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; margin: 2rem 0;">
-
-### 1️⃣ 要望入力（人間）
-人間が目的・意図・条件を自然言語で記述。
-
-### 2️⃣ 構造化と検証（AI）
-AIが要求を分解し、階層・粒度・整合性を自動確認。
-
-### 3️⃣ 修正と統合（AI）
-曖昧表現や重複を自動修正し、要求全体を最適化。
-
-### 4️⃣ 判断と承認（人間）
-AIが提示した改善案を人間が採用・判断。
-
-### 5️⃣ レポートと継続改善（AI）
-履歴・スコアを生成し、品質変化を記録。
-
-<p style="text-align: center; font-size: 1.3rem; margin-top: 2rem; font-weight: bold;">
-この反復が、レビュー前からレビュー済み水準を実現します。
-</p>
-
-</div>
-
----
-
-## 📊 機械的に生まれる効果
-
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
-
-<div style="padding: 1.5rem; background: #f0fdf4; border-radius: 8px; text-align: center;">
-<h3 style="color: #16a34a; font-size: 2rem; margin: 0;">エラーゼロ</h3>
-<p style="margin: 0.5rem 0; color: #666;">初期29件 → 最終0件</p>
-</div>
-
-<div style="padding: 1.5rem; background: #fef3c7; border-radius: 8px; text-align: center;">
-<h3 style="color: #f59e0b; font-size: 2rem; margin: 0;">警告半減</h3>
-<p style="margin: 0.5rem 0; color: #666;">79件 → 33件</p>
-</div>
-
-<div style="padding: 1.5rem; background: #dbeafe; border-radius: 8px; text-align: center;">
-<h3 style="color: #2563eb; font-size: 2rem; margin: 0;">合格率2倍</h3>
-<p style="margin: 0.5rem 0; color: #666;">3.1% → 6.3%</p>
-</div>
-
-<div style="padding: 1.5rem; background: #fce7f3; border-radius: 8px; text-align: center;">
-<h3 style="color: #db2777; font-size: 2rem; margin: 0;">品質スコア</h3>
-<p style="margin: 0.5rem 0; color: #666;">平均 85.0 / 100</p>
-</div>
-
-</div>
-
-<p style="text-align: center; font-size: 1.1rem; margin-top: 2rem; color: #666;">
-改善はAIによる自動ループで継続され、<br>
-<strong>人間は判断と設計意図の確認に集中できます。</strong>
-</p>
-
----
-
-## 💡 できること
-
-### 20種類以上の品質チェック項目
-
-要求管理MCPサーバーは、以下の品質問題を自動検出します：
-
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin: 2rem 0;">
-
-<div style="padding: 1.5rem; border: 2px solid #e5e7eb; border-radius: 8px;">
-<h4>🎯 主語の欠如（E3）</h4>
-<p><strong>検出項目:</strong></p>
-<ul>
-  <li>主語が明示されていない文章</li>
-  <li>責任主体が不明確な記述</li>
-</ul>
-<p><strong>修正手法:</strong></p>
-<ul>
-  <li>「システムは」「ユーザーが」の自動付与</li>
-  <li>カテゴリに応じた主語候補の提案</li>
-</ul>
-</div>
-
-<div style="padding: 1.5rem; border: 2px solid #e5e7eb; border-radius: 8px;">
-<h4>✨ 曖昧な表現（E1）</h4>
-<p><strong>検出項目:</strong></p>
-<ul>
-  <li>「など」「適切な」「十分な」等の曖昧語</li>
-  <li>定量的でない記述</li>
-</ul>
-<p><strong>修正手法:</strong></p>
-<ul>
-  <li>具体的な値・項目への置換候補提示</li>
-  <li>列挙の完全化（「など」の排除）</li>
-</ul>
-</div>
-
-<div style="padding: 1.5rem; border: 2px solid #e5e7eb; border-radius: 8px;">
-<h4>📝 冗長な記述（E4）</h4>
-<p><strong>検出項目:</strong></p>
-<ul>
-  <li>200トークン超の長文</li>
-  <li>重複表現・不要な修飾語</li>
-</ul>
-<p><strong>修正手法:</strong></p>
-<ul>
-  <li>要点を保ちつつ圧縮</li>
-  <li>本質的な情報のみ抽出</li>
-</ul>
-</div>
-
-<div style="padding: 1.5rem; border: 2px solid #e5e7eb; border-radius: 8px;">
-<h4>📊 抽象度の不整合（C2）</h4>
-<p><strong>検出項目:</strong></p>
-<ul>
-  <li>親子間の具体化度のズレ</li>
-  <li>同階層での抽象度のバラつき</li>
-</ul>
-<p><strong>修正手法:</strong></p>
-<ul>
-  <li>技術詳細の追加提案</li>
-  <li>抽象度スコアによる定量評価</li>
-</ul>
-</div>
-
-<div style="padding: 1.5rem; border: 2px solid #e5e7eb; border-radius: 8px;">
-<h4>🔍 単一性の欠如（E5）</h4>
-<p><strong>検出項目:</strong></p>
-<ul>
-  <li>複数の関心事が混在する要求</li>
-  <li>複合的な機能の混同</li>
-</ul>
-<p><strong>修正手法:</strong></p>
-<ul>
-  <li>単一機能への焦点絞り込み提案</li>
-  <li>分割候補の自動検出</li>
-</ul>
-</div>
-
-<div style="padding: 1.5rem; border: 2px solid #e5e7eb; border-radius: 8px;">
-<h4>🏗️ 構造・整合性チェック</h4>
-<p><strong>検出項目:</strong></p>
-<ul>
-  <li>循環参照、孤立要求</li>
-  <li>必須フィールド欠如</li>
-  <li>MECE原則違反（重複・漏れ）</li>
-</ul>
-<p><strong>修正手法:</strong></p>
-<ul>
-  <li>依存関係の再配線</li>
-  <li>階層構造の正規化</li>
-</ul>
-</div>
-
-</div>
-
-> **注**: これらは機械的にチェック可能な品質基準です。最終的な妥当性判断や意思決定は人間のレビューが必要です。
-
----
-
-## 📈 実プロジェクトでの検証結果
-
-### プロジェクト1: 自律移動ロボット
-
-**検証環境:**
-- 要求件数: 約32件
-- ドメイン: 組込みシステム（自律移動ロボット）
-- 実施日: 2025年10月
-
-**検出・修正実績:**
-
-| 検証項目 | 検出数 | 修正数 |
-|---------|-------|-------|
-| **エラーレベル** | 29件 | 29件（100%解消） |
-| **構造的問題** | 重複要求14件、循環参照等 | 全件修正 |
-| **主語欠如（E3）** | 15件 | 18件に主語付与 |
-| **曖昧語（E1）** | 8件 | 具体化実施 |
-| **冗長記述（E4）** | 7件 | 圧縮実施 |
-| **抽象度不整合（C2）** | 10件 | 技術詳細追加 |
-| **単一性欠如（E5）** | 2件 | 焦点絞り込み |
-
-> 📊 [詳細レポート](https://github.com/sawadari/requirements-mcp-server/blob/main/VALIDATION-SUMMARY.md) | [改善ログ](https://github.com/sawadari/requirements-mcp-server/blob/main/IMPROVEMENT-REPORT.md)
-
-### プロジェクト2: 扇風機システム
-
-**検証環境:**
-- 要求件数: 12件 → 15件（改善時に3件追加）
-- ドメイン: 家電製品（扇風機）
-- 実施日: 2025年10月
-
-**検出・修正実績:**
-
-| 検証項目 | Before | After | 改善 |
-|---------|--------|-------|------|
-| **エラー件数** | 3件（25.0%） | 0件（0%） | **-100%** |
-| **警告件数** | 9件（75.0%） | 1件（6.7%） | **-88.9%** |
-| **合格率** | 75.0% | 100.0% | **+25%** |
-| **タグ設定率** | 33.3% | 100.0% | **+200%** |
-
-**主な改善内容:**
-- ✅ 曖昧な表現の具体化（「いい感じ」→「直感的に操作できる」）
-- ✅ 複合要求の分割（8機能混在→4つの独立要求）
-- ✅ TODOプレースホルダーの排除（具体的な機能仕様に置換）
-- ✅ 循環参照の解消（自己参照を正しい階層関係に修正）
-
-> 📊 [詳細レポート：FAN-VALIDATION-COMPARISON.md](https://github.com/sawadari/requirements-mcp-server/blob/main/docs/FAN-VALIDATION-COMPARISON.md)
-
----
-
-## 🧩 仕組みとアーキテクチャ
-
-```
-要望入力 → 構造化 → 自動検証 → 自動修正 → レポート化
-```
-
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
-
-<div style="padding: 1.5rem; border: 2px solid #e5e7eb; border-radius: 8px;">
-<h4>🔍 Validation Engine</h4>
-<p>構造・整合性・スタイルをAIが解析</p>
-<ul style="font-size: 0.9rem; color: #666;">
-  <li>階層構造の妥当性</li>
-  <li>MECE原則の検証</li>
-  <li>曖昧語・冗長表現の検出</li>
-</ul>
-</div>
-
-<div style="padding: 1.5rem; border: 2px solid #e5e7eb; border-radius: 8px;">
-<h4>🔧 Fix Engine</h4>
-<p>修正案を生成し、安全に反映（ロールバック可）</p>
-<ul style="font-size: 0.9rem; color: #666;">
-  <li>Strict/Suggest/Assistモード</li>
-  <li>トランザクション境界保証</li>
-  <li>完全な可逆性</li>
-</ul>
-</div>
-
-<div style="padding: 1.5rem; border: 2px solid #e5e7eb; border-radius: 8px;">
-<h4>📚 Ontology Manager</h4>
-<p>段階・粒度ルールを外部スキーマで管理</p>
-<ul style="font-size: 0.9rem; color: #666;">
-  <li>カスタマイズ可能な段階定義</li>
-  <li>プロジェクト別の粒度ルール</li>
-  <li>派生関係の自動検証</li>
-</ul>
-</div>
-
-<div style="padding: 1.5rem; border: 2px solid #e5e7eb; border-radius: 8px;">
-<h4>📊 Impact Analyzer</h4>
-<p>変更の波及影響を自動分析</p>
-<ul style="font-size: 0.9rem; color: #666;">
-  <li>依存関係の追跡</li>
-  <li>影響範囲の可視化</li>
-  <li>リスク評価</li>
-</ul>
-</div>
-
-</div>
-
-<p style="text-align: center; font-size: 1.2rem; margin-top: 2rem; padding: 1rem; background: #f0f9ff; border-radius: 8px;">
-これらが連動して、<strong>AIによる"要求の自動進化"</strong>を実現します。
-</p>
-
----
-
-## ⚙️ 主な機能
-
-| 区分 | 内容 |
-|------|------|
-| **要求管理** | 要求の追加・更新・追跡をAIが補助 |
-| **検証** | 階層／抽象度／MECE／曖昧語などを自動チェック |
-| **修正** | Strict／Suggest／Assist モードで自動または提案修正 |
-| **レポート** | 品質スコア・履歴・改善結果を自動生成 |
-| **連携** | Claude CodeなどMCP対応エディタから操作可能 |
-
----
-
-## 🔧 詳細な検証項目
-
-### 3ステップで品質チェックを自動化
-
-```
-┌──────────┐   ┌──────────┐   ┌──────────┐
-│ 自動検証 │ → │ 修正提案 │ → │ 再検証   │
-│ Validate │   │ Propose  │   │ Re-Check │
-└──────────┘   └──────────┘   └──────────┘
-```
-
-#### 1️⃣ 自動検証（20種類以上のチェック項目）
-
-**構造検証:**
-- 必須フィールドの存在確認
-- 階層関係の整合性（親子・兄弟）
-- 循環参照・孤立要求の検出
-- 依存関係の妥当性
-
-**MECE原則検証:**
-- 兄弟要求の重複検出
-- 親要求のカバレッジ確認
-- 抽象度階層の一貫性
-
-**品質スタイル検証:**
-- 主語の有無（E3）
-- 曖昧な表現（E1: 「など」「適切な」等）
-- 冗長性（E4: 200トークン超）
-- 単一性（E5: 複数関心事の混在）
-
-**NLP/抽象度検証:**
-- 親子間の具体化度（C2）
-- 同階層での抽象度一貫性
-- キーワード密度・具体性スコア
-
-#### 2️⃣ 修正提案（ポリシードリブン）
-
-**主語付与:**
-```
-Before: 移動指示を受信し処理する
-After:  システムは、移動指示を受信し処理する
-```
-
-**曖昧語置換:**
-```
-Before: 移動指示（前進、後退、停止、回転など）
-After:  移動指示（前進、後退、左回転、右回転、停止）
-```
-
-**冗長圧縮:**
-```
-Before: 219トークンの詳細説明
-After:  130トークン（本質のみ抽出）
-```
-
-**抽象度調整:**
-```
-Before: 経路計画アルゴリズムを使用
-After:  A*アルゴリズムを使用して障害物回避を実現
-```
-
-#### 3️⃣ 品質保証
-
-- ✅ **プレビュー機能**: 適用前に変更内容を確認
-- ✅ **ロールバック**: すべての変更を元に戻せる
-- ✅ **変更履歴**: ChangeSetで完全記録
-- ✅ **品質スコア**: 0-100点で定量評価
-
----
-
-## 🚀 はじめ方
-
-### インストール（3ステップ）
-
-```bash
-# 1. クローン
-git clone https://github.com/sawadari/requirements-mcp-server.git
-cd requirements-mcp-server
-
-# 2. セットアップ
-npm install
-npm run build
-
-# 3. 検証実行
-npx tsx validate-requirements.ts
-```
-
-### Claude Code / エディタと連携
-
-```json
-{
-  "mcpServers": {
-    "requirements": {
-      "command": "node",
-      "args": ["C:/path/to/requirements-mcp-server/build/index.js"]
-    }
-  }
+<style>
+/* ====== Minimal inline styles for a clean LP ====== */
+:root {
+  --fg:#111; --muted:#555; --bg:#fff; --card:#fafafa; --line:#eee; --brand:#0b5fff;
 }
-```
-
-エディタから直接、要求の追加・更新・検証・修正提案が可能になります。
-
-[詳細セットアップガイド](https://github.com/sawadari/requirements-mcp-server/blob/main/SETUP.md)
-
----
-
-## 💎 活用シーン
-
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
-
-<div style="padding: 1.5rem; background: #f0f9ff; border-radius: 8px;">
-<h4>🎯 レビュー前の品質チェック</h4>
-<p>機械的にチェック可能な品質問題を事前に検出・修正。<br>レビュアーは本質的な議論に集中できます。</p>
-</div>
-
-<div style="padding: 1.5rem; background: #f0fdf4; border-radius: 8px;">
-<h4>📊 品質の定量化・可視化</h4>
-<p>品質スコア（0-100点）で定量評価。<br>エラー/警告/情報の件数推移を追跡できます。</p>
-</div>
-
-<div style="padding: 1.5rem; background: #fef3c7; border-radius: 8px;">
-<h4>🔄 既存要求の整備</h4>
-<p>数百件の既存要求を一括検証・修正提案。<br>レガシー要求のクリーンアップに活用できます。</p>
-</div>
-
-<div style="padding: 1.5rem; background: #fce7f3; border-radius: 8px;">
-<h4>🎓 要求記述の学習支援</h4>
-<p>修正提案のBefore/Afterから、良い要求記述を学べます。<br>チーム内の記述品質の標準化に貢献します。</p>
-</div>
-
-</div>
-
----
-
-## 🎯 具体例：扇風機プロジェクト
-
-実際のプロジェクトで、どのように要求品質が改善されたかを見てみましょう。
-
-### Before: 品質に問題がある要求
-
-<div style="padding: 1.5rem; background: #fef2f2; border-left: 4px solid #dc2626; margin: 1rem 0;">
-
-**STK-001: いい感じにする**
-```
-説明: 使いやすくて安全
-タグ: なし
-```
-
-❌ **問題点:**
-- 「いい感じ」は主観的で測定不可能
-- 説明が具体性に欠ける（8文字のみ）
-- タグが設定されていない
-
-</div>
-
-<div style="padding: 1.5rem; background: #fef2f2; border-left: 4px solid #dc2626; margin: 1rem 0;">
-
-**FUNC-004: TODO: あとで考える**
-```
-説明: TODO
-dependencies: [FUNC-004]  # 自己参照による循環依存!
-```
-
-❌ **問題点:**
-- プレースホルダーとして残されている
-- 循環参照（自分自身に依存）
-- 実装不可能
-
-</div>
-
-### After: 改善された要求
-
-<div style="padding: 1.5rem; background: #f0fdf4; border-left: 4px solid #16a34a; margin: 1rem 0;">
-
-**STK-001: 使いやすい操作性**
-```
-説明: ユーザーが直感的に操作できるシンプルなインターフェースを提供する必要がある
-タグ: [ユーザビリティ, 操作性]
-```
-
-✅ **改善ポイント:**
-- 「いい感じ」→「使いやすい操作性」と具体化
-- 「直感的」「シンプル」という測定可能な基準を追加
-- 適切なタグを設定
-
-</div>
-
-<div style="padding: 1.5rem; background: #f0fdf4; border-left: 4px solid #16a34a; margin: 1rem 0;">
-
-**FUNC-004: 電源ボタン長押し検出**
-```
-説明: 電源ボタンを2秒間長押しした際に電源オフを実行する
-タグ: [ボタン, 長押し, 電源制御]
-refines: [SYS-003]
-```
-
-✅ **改善ポイント:**
-- TODOを具体的な機能に置き換え
-- 数値基準を明示（2秒間）
-- 実装可能な粒度に分割
-- 正しい階層関係を設定
-
-</div>
-
-### 改善効果（定量データ）
-
-| 指標 | Before | After | 改善率 |
-|------|--------|-------|--------|
-| **エラー件数** | 3件 | 0件 | **-100%** ✨ |
-| **警告件数** | 9件 | 1件 | **-88.9%** |
-| **合格率** | 75.0% | 100.0% | **+25%** |
-| **タグ設定率** | 33.3% | 100.0% | **+200%** |
-| **平均説明文長** | 42.3文字 | 58.2文字 | +37.6% |
-
-> 📊 [詳細レポート：FAN-VALIDATION-COMPARISON.md](https://github.com/sawadari/requirements-mcp-server/blob/main/docs/FAN-VALIDATION-COMPARISON.md)
-
-### 良い要求の5S原則
-
-1. **Specific（具体的）**: 「いい感じ」ではなく測定可能な基準
-2. **Single（単一責任）**: 1要求=1関心事
-3. **Structured（構造化）**: 明確な階層関係（refines）
-4. **Stable（安定）**: TODOやプレースホルダーなし
-5. **Standardized（標準化）**: 命名規則、タグ、優先度の統一
-
----
-
-## 🎓 その他の実例：検出と修正提案
-
-### ケース1: 主語欠如（E3）の検出
-
-**検出前:**
-```
-移動指示（前進、後退、停止、回転）を受信し処理する
-```
-
-**問題点:** 主語が明示されていない（誰が/何が処理するのか不明）
-
-**修正提案:**
-```
-システムは、移動指示（前進、後退、停止、回転）を受信し処理する
-```
-
-**改善効果:** 責任主体が明確化される
-
----
-
-### ケース2: 曖昧語（E1）の検出
-
-**検出前:**
-```
-移動指示（前進、後退、停止、回転など）を処理
-```
-
-**問題点:** 「など」により項目が不完全
-
-**修正提案:**
-```
-移動指示（前進、後退、左回転、右回転、停止）を処理
-```
-
-**改善効果:** 全項目が明示され、実装時の曖昧さが解消
-
----
-
-### ケース3: 冗長記述（E4）の検出
-
-**検出前（219トークン）:**
-```
-画像認識システムは、カメラから取得した画像データを解析し、
-物体の位置、形状、色、テクスチャなどの特徴を抽出します。
-抽出された特徴は、事前に学習された機械学習モデルと照合され、
-物体の種類を判定します。判定結果は、制御システムに送信され...
-```
-
-**問題点:** 冗長で読みにくい
-
-**修正提案（約130トークン）:**
-```
-画像認識システムは、カメラ画像から物体の位置・形状・色を抽出し、
-機械学習モデルで種類を判定する。判定結果を制御システムへ送信。
-```
-
-**改善効果:** 要点のみ残し、読みやすさ向上
-
----
-
-### ケース4: 抽象度不整合（C2）の検出
-
-**検出前:**
-```
-経路計画アルゴリズムを使用して最適経路を計算
-```
-
-**問題点:** 具体的な技術詳細が不足
-
-**修正提案:**
-```
-A*アルゴリズムを使用して最適経路を計算し、障害物回避を実現
-```
-
-**改善効果:** アルゴリズム名と目的が明確化
-
----
-
-## 🌟 高度な機能
-
-### オントロジーのカスタマイズ
-
-プロジェクトに合わせて、段階定義・検証ルールを変更可能：
-
-| オントロジー | 段階構成 | 適用分野 |
-|-------------|---------|---------|
-| **デフォルト** | stakeholder → system → functional | 一般的なシステム開発 |
-| **組込み** | mission → capability → subsystem → component | 組込みシステム、ロボット |
-| **Web/AI** | user_story → feature → api/model → implementation | Webアプリ、AI開発 |
-
-```bash
-export ONTOLOGY_SCHEMA_PATH=./config/ontology-embedded-system.json
-npm start
-```
-
-[オントロジーカスタマイズガイド](https://github.com/sawadari/requirements-mcp-server/blob/main/ONTOLOGY-GUIDE.md)
-
----
-
-### 修正ポリシーの設定
-
-自動修正の挙動を3モードで制御：
-
-| モード | 動作 | 用途 |
-|-------|------|------|
-| **Strict** | 自動適用 | CI/CD、夜間バッチ |
-| **Suggest** | 提案のみ | インタラクティブレビュー |
-| **Assist** | プレビュー | 学習・トレーニング |
-
-```jsonc
-{
-  "autoFix": {
-    "enabled": true,
-    "mode": "suggest",  // strict / suggest / assist
-    "revalidateAfterFix": true
-  }
-}
-```
-
----
-
-### CI/CD統合
-
-GitHub Actionsで品質ゲートを自動化：
-
-```yaml
-- name: Requirements Quality Check
-  run: |
-    npx tsx validate-requirements.ts
-    # エラーがある場合はビルド失敗
-```
-
-品質基準を満たさないPRをマージ前に検出できます。
-
----
-
-## ❓ よくある質問
-
-<details>
-<summary><strong>Q. 既存のALM/PLMツールと併用できますか？</strong></summary>
-<p><strong>A.</strong> はい。JSON/CSVでエクスポート/インポートし、本サーバーで品質チェック後、元システムに反映する運用が可能です。</p>
-</details>
-
-<details>
-<summary><strong>Q. 自動修正は安全ですか？人間のレビューは不要ですか？</strong></summary>
-<p><strong>A.</strong> 自動修正はあくまで「提案」です。すべての変更はプレビュー可能で、ロールバックも保証されています。最終的な判断や意思決定は人間のレビューが必要です。本ツールは、機械的にチェック可能な品質問題を事前に検出し、レビュー負荷を軽減することを目的としています。</p>
-</details>
-
-<details>
-<summary><strong>Q. LLM（GPT等）は必須ですか？</strong></summary>
-<p><strong>A.</strong> 必須ではありません。構造・規則ベースのチェックで十分な効果があります。LLMは抽象度評価など一部機能のオプションです。</p>
-</details>
-
-<details>
-<summary><strong>Q. 何件の要求まで対応できますか？</strong></summary>
-<p><strong>A.</strong> 数百件規模で検証済みです。1000件以上の場合は、パフォーマンスを考慮した分割管理を推奨します。</p>
-</details>
-
-<details>
-<summary><strong>Q. 検出精度はどの程度ですか？</strong></summary>
-<p><strong>A.</strong> ルールベースのチェック（主語欠如、曖昧語、構造整合性等）は高精度です。抽象度やMECEのような判断が必要な項目は、NLPとヒューリスティックで補助的に評価します。最終判断は人間のレビューが必要です。</p>
-</details>
-
----
-
-## 📚 関連ドキュメント
-
-| ドキュメント | 内容 |
-|-------------|------|
-| [README.md](https://github.com/sawadari/requirements-mcp-server/blob/main/README.md) | 機能一覧、MCPツール、基本設定 |
-| [SETUP.md](https://github.com/sawadari/requirements-mcp-server/blob/main/SETUP.md) | 詳細セットアップガイド |
-| [ONTOLOGY-GUIDE.md](https://github.com/sawadari/requirements-mcp-server/blob/main/ONTOLOGY-GUIDE.md) | オントロジーカスタマイズ方法 |
-| [FIX-ENGINE-README.md](https://github.com/sawadari/requirements-mcp-server/blob/main/FIX-ENGINE-README.md) | 自動修正エンジンの詳細 |
-| [VALIDATION-SUMMARY.md](https://github.com/sawadari/requirements-mcp-server/blob/main/VALIDATION-SUMMARY.md) | 検証結果レポート |
-| [MIYABI-INTEGRATION.md](https://github.com/sawadari/requirements-mcp-server/blob/main/MIYABI-INTEGRATION.md) | Miyabiフレームワーク統合 |
-
----
-
-## 🎯 今すぐ試す
-
-<div style="text-align: center; padding: 3rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; margin: 2rem 0;">
-  <h2 style="color: white; margin-bottom: 1rem;">要求の品質チェックを機械化する</h2>
-  <p style="font-size: 1.2rem; margin-bottom: 2rem;">レビュー前の品質問題を自動検出・修正提案</p>
-  <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-    <a href="https://github.com/sawadari/requirements-mcp-server" style="display: inline-block; padding: 1rem 2rem; background: white; color: #667eea; border-radius: 8px; text-decoration: none; font-weight: bold;">GitHubで見る</a>
-    <a href="https://github.com/sawadari/requirements-mcp-server/blob/main/SETUP.md" style="display: inline-block; padding: 1rem 2rem; background: rgba(255,255,255,0.2); color: white; border-radius: 8px; text-decoration: none; font-weight: bold;">セットアップガイド</a>
+* {box-sizing: border-box;}
+body { color:var(--fg); background:var(--bg); line-height:1.85; }
+.container {max-width: 1080px; margin: 0 auto; padding: 24px;}
+.hero {text-align:center; padding: 32px 0 16px;}
+.hero h1 {font-size: 2.2rem; margin:.2em 0;}
+.hero p {color:var(--muted); margin:.2em 0 1.2em;}
+.badges {display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin: 8px 0 24px;}
+.badge {border:1px solid var(--line); border-radius: 999px; padding: .25em .75em; font-size:.92rem; background:var(--card);}
+.btns {display:flex; gap:12px; justify-content:center; flex-wrap:wrap;}
+.btn {display:inline-block; padding:.7em 1.1em; border:1px solid var(--brand); color:#fff; background:var(--brand); border-radius:8px; text-decoration:none;}
+.btn--ghost {background:transparent; color:var(--brand);}
+.section {padding: 32px 0; border-top:1px solid var(--line);}
+.section h2 {font-size:1.6rem; margin-bottom:.6em;}
+.lead {font-weight:600;}
+.grid {display:grid; gap:16px;}
+.grid--3 {grid-template-columns: repeat(3, minmax(0,1fr));}
+.grid--2 {grid-template-columns: repeat(2, minmax(0,1fr));}
+@media (max-width: 900px) { .grid--3 {grid-template-columns:1fr 1fr;} }
+@media (max-width: 640px) { .grid--3, .grid--2 {grid-template-columns:1fr;} }
+.card {background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px;}
+.card h3 {margin-top:0; font-size:1.1rem;}
+.kicker {font-size:.85rem; letter-spacing:.04em; color:var(--muted); text-transform:uppercase;}
+.table {width:100%; border-collapse: collapse; font-size:.98rem;}
+.table th, .table td {border:1px solid var(--line); padding:.65em .7em; vertical-align:top;}
+.table th {background:#f6f8ff; text-align:left;}
+.callout {border-left:4px solid var(--brand); background:#f6f8ff; padding:12px 14px; border-radius:6px; margin:14px 0;}
+.small {font-size:.92rem; color:var(--muted);}
+summary {cursor:pointer; font-weight:600;}
+.hr {height:1px; background:var(--line); margin:24px 0;}
+.center {text-align:center;}
+.code {font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; background:#f6f8fa; padding:.2em .45em; border-radius:6px;}
+</style>
+
+<div class="container">
+  <div class="hero">
+    <div class="kicker">AI × Human-in-the-loop</div>
+    <h1>開発要求を "資産" にする要求管理 MCP サーバー</h1>
+    <p>完全性・無矛盾性・トレース性・テスト可能性・単一性を、AIと人間の協同で機械的に維持。<br>再利用・共有・連携を前提にした要求基盤。</p>
+    <div class="badges">
+      <span class="badge">構造化要求（階層/属性/リンク）</span>
+      <span class="badge">妥当性チェックと自動修正</span>
+      <span class="badge">JSON/CSVでデータ互換</span>
+      <span class="badge">ドメイン別にカスタマイズ</span>
+    </div>
+    <div class="btns">
+      <a class="btn" href="https://github.com/sawadari/requirements-mcp-server" target="_blank" rel="noopener">GitHubで見る</a>
+      <a class="btn btn--ghost" href="#quickstart">クイックスタート</a>
+    </div>
   </div>
-</div>
 
----
+  <!-- 要点 -->
+  <div class="section">
+    <h2>これだけは伝えたい</h2>
+    <p class="lead">要求は開発インプットの中核。品質が高いほど再利用性と共有性が高まり、維持コストが下がる。</p>
+    <div class="grid grid--3">
+      <div class="card">
+        <h3>品質の5原則</h3>
+        <ul>
+          <li><strong>完全性</strong>：目的/前提/制約/条件/検証観点の抜け漏れ防止</li>
+          <li><strong>無矛盾性</strong>：同一/他レベル間の衝突を検知</li>
+          <li><strong>トレース性</strong>：上位→下位→テストの連鎖を辿れる</li>
+          <li><strong>テスト可能性</strong>：観測可能な受入条件を持つ</li>
+          <li><strong>単一性</strong>：重複・二重定義を排除</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>AI × 人間の協同</h3>
+        <p>再利用性は<strong>構造化</strong>、品質維持は<strong>妥当性チェック＋自動修正</strong>で実現。人間は承認と意思決定に集中。</p>
+      </div>
+      <div class="card">
+        <h3>互換・拡張</h3>
+        <p>JSON/CSVでツール連携しやすく、語彙/テンプレ/禁止語などの<strong>チェックルール</strong>をプロジェクト別にプロファイル化。</p>
+      </div>
+    </div>
+  </div>
 
-<div style="text-align: center; padding: 2rem; color: #666;">
-  <p>MIT License | Made for Requirements Engineering</p>
-  <p><a href="https://github.com/sawadari/requirements-mcp-server">GitHub</a> • <a href="https://github.com/sawadari/requirements-mcp-server/issues">Issue Report</a> • <a href="https://github.com/sawadari/requirements-mcp-server/discussions">Discussions</a></p>
+  <!-- 妥当性チェック -->
+  <div class="section" id="validation">
+    <h2>妥当性チェックの中身</h2>
+    <div class="grid grid--2">
+      <div class="card">
+        <h3>論理・構造の検査</h3>
+        <ul>
+          <li>親子整合・参照一貫性・リンク切れ検出</li>
+          <li>重複/矛盾/循環参照の検出</li>
+          <li>番号規則・版管理・変更理由の必須化</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>表現・記述の検査</h3>
+        <ul>
+          <li>曖昧語（例：「なるべく」「適切に」）の検出と具体化提案</li>
+          <li>用語統一（用語表/辞書に基づく正規化）</li>
+          <li>テンプレ逸脱や受入条件欠落の検出</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout small">※ チェックルールはドメインや規格（例：ISO 26262、セキュリティ）に合わせて拡張可能</div>
+  </div>
+
+  <!-- 自動修正と人間の関与 -->
+  <div class="section">
+    <h2>自動修正の特徴と Human-in-the-loop</h2>
+    <div class="grid grid--3">
+      <div class="card">
+        <h3>AIの修正提案</h3>
+        <p>曖昧語の具体化、受入基準の補完、重複統合、用語統一、参照の張り直しを自動提案。</p>
+      </div>
+      <div class="card">
+        <h3>承認フロー</h3>
+        <p>AI → <strong>修正案</strong>／人 → <strong>承認/差戻し</strong>。承認後はトレース更新・差分記録を自動で反映。</p>
+      </div>
+      <div class="card">
+        <h3>説明責任の担保</h3>
+        <p>修正差分・理由・影響範囲を保持。レビューは「問題指摘」から「提案承認」にシフトし、認知負荷を低減。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 使い方 -->
+  <div class="section" id="howto">
+    <h2>どう使うのか（フロー）</h2>
+    <ol>
+      <li>要望を自然文で投入（チャット/フォーム）。</li>
+      <li>AIが要求候補を<strong>構造化</strong>（階層・属性・リンク）。</li>
+      <li><a href="#validation">妥当性チェック</a>を実施し、修正案を提示。</li>
+      <li>人間が<strong>承認</strong>（承認後にトレース・テストリンク更新）。</li>
+      <li>JSON/CSVで保存し、テスト/タスク管理に連携。</li>
+    </ol>
+    <div class="callout">初期起こし・整理・統一・重複排除・テスト観点付与が自動化。<strong>レビュー時間を短縮</strong>し、改版維持を機械化。</div>
+  </div>
+
+  <!-- 互換性/カスタマイズ -->
+  <div class="section">
+    <h2>データ互換性とカスタマイズ性</h2>
+    <div class="grid grid--2">
+      <div class="card">
+        <h3>データ互換性</h3>
+        <ul>
+          <li>入出力：JSON / CSV（Excel/テスト/チケット連携）</li>
+          <li>リンク：要求ID・親子・参照・テスト・仕様章節に紐付け</li>
+          <li>移行：Word/Excel/CSV取り込み→再構造化を支援</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>カスタマイズ性</h3>
+        <ul>
+          <li>語彙/テンプレ/禁止語/番号規則をプロジェクト別に設定</li>
+          <li>安全/法規/機能安全などの属性拡張</li>
+          <li>業界特有の指標や言い回しに適合</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 比較と考察 -->
+  <div class="section">
+    <h2>比較と考察</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>観点</th>
+          <th>ChatGPTだけで要求を書く</th>
+          <th>人間だけで作成/維持</th>
+          <th><strong>AI＋MCP（本サーバー）</strong></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>初期スピード</td>
+          <td>◎ 下書きは速い</td>
+          <td>△ 速度は人依存</td>
+          <td>◎ 自動構造化で迅速</td>
+        </tr>
+        <tr>
+          <td>再利用性</td>
+          <td>△ 構造・リンクは手作業</td>
+          <td>○ ルール化で可</td>
+          <td><strong>◎ 構造＋検証が前提</strong></td>
+        </tr>
+        <tr>
+          <td>正確性・維持</td>
+          <td>△ 運用次第でばらつき</td>
+          <td>○ 高精度だが維持が重い</td>
+          <td><strong>◎ 機械的維持で安定</strong></td>
+        </tr>
+        <tr>
+          <td>説明責任（差分/根拠）</td>
+          <td>△ 手作業で追従</td>
+          <td>○ ドキュメント化で担保</td>
+          <td><strong>◎ 自動差分/影響提示</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="hr"></div>
+
+    <p><strong>AIは本当に必要？ MCPだけで良い？</strong><br>
+    MCPだけだと"置き場"はできますが、<strong>品質維持の自動化</strong>が不在。<br>
+    <strong>AI＋MCP</strong>で「作る（人）」と「守る（機械）」を分担するのが最短距離。</p>
+
+    <p><strong>AI協同の未来</strong><br>
+    人間は未来を見据えたインプットの創出に集中し、AIはアウトプットの生成・維持・整合を継続実行。<br>
+    その結果、<strong>変化に強いデジタル要求資産</strong>が蓄積します。</p>
+  </div>
+
+  <!-- FAQ（詳細は折りたたみ） -->
+  <div class="section">
+    <h2>FAQ</h2>
+    <details>
+      <summary>テストケースとの連携は？</summary>
+      <div class="card"><p>受入条件からテスト観点を抽出し、テストIDと相互リンク。改版時は影響範囲を自動提示します。</p></div>
+    </details>
+    <details>
+      <summary>途中から導入できますか？</summary>
+      <div class="card"><p>既存のWord/Excel/CSVを取り込み、再構造化・用語統一・重複統合を支援します。</p></div>
+    </details>
+    <details>
+      <summary>規格対応（例：ISO 26262など）は？</summary>
+      <div class="card"><p>属性モデル・チェックルールをプロファイル化可能。差分・根拠を含む監査証跡も保持します。</p></div>
+    </details>
+  </div>
+
+  <!-- クイックスタート -->
+  <div class="section" id="quickstart">
+    <h2>クイックスタート</h2>
+    <ol>
+      <li>リポジトリを取得（<a href="https://github.com/sawadari/requirements-mcp-server" target="_blank" rel="noopener">GitHub</a>）。</li>
+      <li>サンプル JSON/CSV を投入。</li>
+      <li>チェックルール（語彙/テンプレ/禁止語/番号規則）を設定。</li>
+      <li>要望を投入 → 構造化 → 妥当性チェック → 承認。</li>
+    </ol>
+    <p class="center"><a class="btn" href="https://github.com/sawadari/requirements-mcp-server" target="_blank" rel="noopener">GitHubで始める</a></p>
+    <p class="small center">※ プロジェクトページの場合は <span class="code">_config.yml</span> に <span class="code">baseurl: "/requirements-mcp-server"</span> を設定してください。</p>
+  </div>
 </div>
