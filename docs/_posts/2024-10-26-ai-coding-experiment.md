@@ -1,7 +1,7 @@
 ---
 layout: post
 title: AIコーディングで要求管理ツールを作った実験記録
-date: 2025-10-26
+date: 2024-10-26
 tags: [AI開発, Miyabi, 実験記録, モックアップ]
 ---
 
@@ -201,7 +201,7 @@ DB統合までは未実施。実運用には以下が必要:
 ---
 
 **関連記事:**
-- [要求の"自動修正"を安全に回すコツ](/requirements-mcp-server/2025/10/25/hello-mcp.html)
+- [要求の"自動修正"を安全に回すコツ](/requirements-mcp-server/2024/10/25/hello-mcp.html)
 
 **次回予告:**
 - オントロジーのカスタマイズ方法
