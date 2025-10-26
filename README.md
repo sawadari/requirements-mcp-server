@@ -4,6 +4,8 @@
 
 📘 **[プロジェクトランディングページ](https://sawadari.github.io/requirements-mcp-server/)** - 効果実績、アーキテクチャ、はじめ方を詳しく解説
 
+📘 **[人間中心AI時代の組織憲章](https://sawadari.github.io/principle/)** - 設計の前提条件
+
 ## 目次
 
 - [概要](#概要)
