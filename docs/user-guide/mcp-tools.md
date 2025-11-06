@@ -338,7 +338,7 @@
 **説明**: Fix Engineのポリシーファイルを読み込みます
 
 **入力パラメータ**:
-- `policyPath` (オプション) - ポリシーファイルのパス（デフォルト: `./fix-policy.jsonc`）
+- `policyPath` (オプション) - ポリシーファイルのパス（デフォルト: `./config/fix-policy.jsonc`）
 
 **出力**: `FixPolicy` オブジェクト
 

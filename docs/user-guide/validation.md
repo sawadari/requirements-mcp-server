@@ -173,15 +173,15 @@ Claude Codeが以下のような結果を返します:
 
 ### 現在有効なルール一覧
 
-validation-rules.jsonc ファイルに20個のルールが定義されています:
+config/validation-rules.jsonc ファイルに20個のルールが定義されています:
 
 ```bash
-cat validation-rules.jsonc
+cat config/validation-rules.jsonc
 ```
 
 ### ルールの有効/無効切り替え
 
-validation-rules.jsonc を編集:
+config/validation-rules.jsonc を編集:
 
 ```jsonc
 {
@@ -227,18 +227,18 @@ ValidationEngine initialized
 
 ### ルールが読み込めない
 
-validation-rules.jsonc のJSON構文エラーをチェック:
+config/validation-rules.jsonc のJSON構文エラーをチェック:
 
 ```bash
 cd requirements-mcp-server
-node -e "console.log(JSON.parse(require('fs').readFileSync('validation-rules.jsonc', 'utf-8').split('\n').filter(l => !l.trim().startsWith('//')).join('\n')))"
+node -e "console.log(JSON.parse(require('fs').readFileSync('config/validation-rules.jsonc', 'utf-8').split('\n').filter(l => !l.trim().startsWith('//')).join('\n')))"
 ```
 
 ## 高度な使用例
 
 ### カスタムルールの追加
 
-validation-rules.jsonc に新しいルールを追加:
+config/validation-rules.jsonc に新しいルールを追加:
 
 ```jsonc
 {
