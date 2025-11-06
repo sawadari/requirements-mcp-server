@@ -28,7 +28,10 @@
     "clean:dry-run": "tsx scripts/cleanup.ts --dry-run",
     "clean:modules": "rm -rf node_modules && npm install",
     "clean:cache": "npm cache clean --force",
-    "clean:all": "npm run clean:force && npm run clean:modules && npm run clean:cache"
+    "clean:all": "npm run clean:force && npm run clean:modules && npm run clean:cache",
+    "demo:narration": "node demo/generate-narration.cjs",
+    "demo:run": "node demo/run-demo.cjs demo/scenarios/01-basic-usage.json",
+    "demo:dry-run": "node demo/run-demo.cjs demo/scenarios/01-basic-usage.json --dry-run"
   },
   "keywords": [
     "mcp",
@@ -43,12 +46,15 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.67.0",
     "@modelcontextprotocol/sdk": "^1.20.1",
+    "axios": "^1.13.2",
     "chokidar": "^4.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "jsonc-parser": "^3.3.1",
     "marked": "^16.4.1",
+    "obs-websocket-js": "^5.0.6",
+    "say": "^0.16.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {

@@ -189,3 +189,7 @@ response.json
 
 # Build symlink
 /build
+
+# Demo output files
+demo/narrations/
+demo/output/
