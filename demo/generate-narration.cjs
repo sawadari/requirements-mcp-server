@@ -6,10 +6,24 @@
 
 const fs = require('fs').promises;
 const path = require('path');
-const say = require('say');
+const { exec } = require('child_process');
 const { promisify } = require('util');
 
-const sayExport = promisify(say.export);
+const execAsync = promisify(exec);
+
+async function generateAudioWithPowerShell(text, outputPath) {
+  // PowerShellスクリプトで音声生成
+  const psScript = `
+Add-Type -AssemblyName System.Speech
+$synth = New-Object System.Speech.Synthesis.SpeechSynthesizer
+$synth.SetOutputToWaveFile("${outputPath.replace(/\\/g, '\\\\')}")
+$synth.Rate = 0
+$synth.Speak("${text.replace(/"/g, '`"')}")
+$synth.Dispose()
+  `.trim();
+
+  await execAsync(`powershell -Command "${psScript}"`);
+}
 
 async function generateNarration(scenarioPath) {
   console.log(`📖 シナリオを読み込み中: ${scenarioPath}`);
@@ -38,8 +52,8 @@ async function generateNarration(scenarioPath) {
     console.log(`   テキスト: "${scene.narration.substring(0, 50)}..."`);
 
     try {
-      // Windows TTS で音声生成
-      await sayExport(scene.narration, null, 1.0, outputPath);
+      // PowerShell TTS で音声生成
+      await generateAudioWithPowerShell(scene.narration, outputPath);
       console.log(`✅ 完了: ${outputPath}\n`);
     } catch (error) {
       console.error(`❌ エラー: ${scene.id}`, error.message);
