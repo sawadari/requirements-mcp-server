@@ -164,9 +164,10 @@ async function main() {
 
   const scenarioPath = path.resolve(scenarioFile);
 
+  const dryRun = args.includes('--dry-run');
   const options = {
-    dryRun: args.includes('--dry-run'),
-    skipRecording: args.includes('--skip-recording'),
+    dryRun: dryRun,
+    skipRecording: args.includes('--skip-recording') || dryRun, // dry-runの場合は録画もスキップ
     obsHost: args.includes('--obs-host') ? args[args.indexOf('--obs-host') + 1] : undefined,
     obsPassword: args.includes('--obs-password') ? args[args.indexOf('--obs-password') + 1] : undefined,
   };
