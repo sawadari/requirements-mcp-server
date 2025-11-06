@@ -33,7 +33,7 @@ export class RuleConfigLoader {
       return this.cachedConfig;
     }
 
-    const defaultPath = path.join(process.cwd(), 'validation-rules.jsonc');
+    const defaultPath = path.join(process.cwd(), 'config/validation-rules.jsonc');
     const filePath = configPath || defaultPath;
 
     try {

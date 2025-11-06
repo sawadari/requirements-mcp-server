@@ -168,7 +168,7 @@ async function main() {
   console.log('• rollbackAll(changeSets, reqs) - 全て取り消し\n');
 
   console.log('【ポリシー設定】');
-  console.log('• fix-policy.jsonc を編集してルールをカスタマイズ');
+  console.log('• config/fix-policy.jsonc を編集してルールをカスタマイズ');
   console.log('• Strict（自動）とSuggest（承認必要）を区別');
   console.log('• 優先度・ガード条件・アクションを設定\n');
 

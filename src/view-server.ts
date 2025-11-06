@@ -2695,7 +2695,7 @@ app.get('/api/view-config', async (req, res) => {
   try {
     const fs = await import('fs/promises');
     const path = await import('path');
-    const configPath = path.join(process.cwd(), 'view-config.json');
+    const configPath = path.join(process.cwd(), 'config/view-config.json');
 
     try {
       const configData = await fs.readFile(configPath, 'utf-8');

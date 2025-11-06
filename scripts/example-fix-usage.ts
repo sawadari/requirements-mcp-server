@@ -232,7 +232,7 @@ async function main() {
   console.log('• ChangeEngine - ChangeSetの適用・プレビュー\n');
 
   console.log('【ポリシー定義】');
-  console.log('• fix-policy.jsonc でルールを定義');
+  console.log('• config/fix-policy.jsonc でルールを定義');
   console.log('• Strict（自動適用）とSuggest（承認必要）を区別');
   console.log('• 優先度・ガード条件・アクションを設定\n');
 

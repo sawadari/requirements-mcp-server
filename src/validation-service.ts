@@ -64,7 +64,7 @@ export class ValidationService {
       autoFix: {
         enabled: true,
         mode: 'strict',
-        policyFile: './src/fix-engine/fix-policy.jsonc',
+        policyFile: './config/fix-policy.jsonc',
         revalidateAfterFix: true,
         maxIterations: 3,
         fixSeverity: 'error',

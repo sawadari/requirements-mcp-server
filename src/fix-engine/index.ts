@@ -16,7 +16,7 @@ import type { FixPolicy } from './types.js';
  * fix-policy.jsoncをロード
  */
 export function loadPolicy(policyPath?: string): FixPolicy {
-  const defaultPath = path.join(process.cwd(), 'fix-policy.jsonc');
+  const defaultPath = path.join(process.cwd(), 'config/fix-policy.jsonc');
   const filePath = policyPath || defaultPath;
 
   if (!fs.existsSync(filePath)) {

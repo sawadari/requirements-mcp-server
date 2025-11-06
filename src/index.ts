@@ -109,7 +109,7 @@ const GetValidationReportSchema = z.object({
 });
 
 const LoadPolicySchema = z.object({
-  policyPath: z.string().optional().describe('ポリシーファイルのパス（デフォルト: ./fix-policy.jsonc）'),
+  policyPath: z.string().optional().describe('ポリシーファイルのパス（デフォルト: ./config/fix-policy.jsonc）'),
 });
 
 const PreviewFixesSchema = z.object({
@@ -444,7 +444,7 @@ class RequirementsMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            policyPath: { type: 'string', description: 'ポリシーファイルのパス（デフォルト: ./fix-policy.jsonc）' },
+            policyPath: { type: 'string', description: 'ポリシーファイルのパス（デフォルト: ./config/fix-policy.jsonc）' },
           },
         },
       },
@@ -917,7 +917,7 @@ class RequirementsMCPServer {
 
   private async handleLoadPolicy(args: any) {
     const params = LoadPolicySchema.parse(args);
-    const policyPath = params.policyPath || './fix-policy.jsonc';
+    const policyPath = params.policyPath || './config/fix-policy.jsonc';
 
     try {
       // JSONCファイルを読み込み（コメント対応）

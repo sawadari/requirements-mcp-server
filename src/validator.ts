@@ -27,7 +27,7 @@ export class RequirementValidator {
   }
 
   async loadConfig(configPath?: string): Promise<void> {
-    const defaultPath = path.join(process.cwd(), 'validation-rules.json');
+    const defaultPath = path.join(process.cwd(), 'config/validation-rules.json');
     const targetPath = configPath || defaultPath;
 
     try {
@@ -40,7 +40,7 @@ export class RequirementValidator {
   }
 
   async saveConfig(configPath?: string): Promise<void> {
-    const defaultPath = path.join(process.cwd(), 'validation-rules.json');
+    const defaultPath = path.join(process.cwd(), 'config/validation-rules.json');
     const targetPath = configPath || defaultPath;
     await fs.writeFile(targetPath, JSON.stringify(this.config, null, 2), 'utf-8');
   }
