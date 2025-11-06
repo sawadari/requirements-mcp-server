@@ -1,1 +1,0 @@
-{"response":"## ✅ 完了しました！\n\n**実行ステップ**: 0/1 成功\n**処理時間**: 0.2秒\n\n\n### ⚠️ 一部ステップが失敗\n\n- step1: 404 {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-3-5-sonnet-20241022\"},\"request_id\":\"req_011CURw5fGZvirx46UzA1tnL\"}\n\n---\n\n📊 詳細を確認: http://localhost:3010\n"}

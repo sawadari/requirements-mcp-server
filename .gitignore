@@ -177,3 +177,15 @@ nul
 add-rationales.ts
 fix-requirements.ts
 test-*.ts
+
+# Test and temporary files in root
+/test-*.js
+/test-*.json
+/test-*.sh
+!/tests/**
+!/scripts/test-*.ts
+server.log
+response.json
+
+# Build symlink
+/build
