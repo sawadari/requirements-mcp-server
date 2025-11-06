@@ -2,470 +2,279 @@
 
 **要求管理MCPサーバー** - Claude Codeとの対話的な要求管理システム
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![MCP](https://img.shields.io/badge/MCP-1.20.1-blue)](https://modelcontextprotocol.io/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue)](https://www.typescriptlang.org/)
+
 📘 **[プロジェクトランディングページ](https://sawadari.github.io/requirements-mcp-server/)** - 効果実績、アーキテクチャ、はじめ方を詳しく解説
 
 📘 **[人間中心AI時代の組織憲章](https://sawadari.github.io/principle/)** - 設計の前提条件
 
-## 目次
+---
 
-- [概要](#概要)
-- [主な機能](#主な機能)
-- [インストール](#インストール)
-- [使い方](#使い方)
-- [Webビューアー](#webビューアー)
-- [MCPツール](#mcpツール)
-- [要求データ構造](#要求データ構造)
-- [使用シナリオ例](#使用シナリオ例)
-- [Miyabiフレームワークとの統合](#miyabiフレームワークとの統合)
-- [ライセンス](#ライセンス)
+## ✨ 主な機能
 
-## 概要
+- **🔧 21個のMCPツール** - CRUD、分析、バリデーション、変更管理、プロジェクト管理
+- **🌐 Webビューアー** - インタラクティブなブラウザUIで要求を可視化
+- **✅ 自動検証** - 5つのドメインで品質チェック（階層、グラフ、抽象度、MECE、スタイル）
+- **🔄 Fix Engine** - ポリシーベースの自動修正とロールバック
+- **🎯 オントロジー** - カスタマイズ可能な要求段階定義
+- **📊 プロジェクト管理** - 複数プロジェクトの切り替えと管理
+- **🤖 AIチャット統合** - Claude搭載の対話型アシスタント
 
-requirements-mcp-serverは、Model Context Protocol (MCP)を使用した要求管理システムです。Claude Codeと統合することで、対話しながら要求の追加・更新・削除、影響範囲の分析、変更提案の作成などを実行できます。
+---
 
-### 主な機能
+## 🚀 クイックスタート
 
-- **要求管理**: 要求の追加、取得、更新、削除、検索
-- **依存関係管理**: 要求間の依存関係を定義・追跡
-- **影響範囲分析**: 要求の変更が他の要求に与える影響を自動分析
-- **変更提案**: 変更内容と影響分析を含む提案を作成
-- **依存関係グラフ**: 要求の依存関係を可視化
-- **オントロジー**: カスタマイズ可能な要求段階定義（NEW!）
-  - 外部JSON定義による柔軟なオントロジーカスタマイズ
-  - プロジェクトやドメインに応じた段階（stakeholder/system/functionalなど）定義
-  - MECE原則、粒度ルール、派生ルールの段階別設定
-  - 詳細は [ONTOLOGY-GUIDE.md](./ONTOLOGY-GUIDE.md) を参照
-- **Webビューアー**: インタラクティブなブラウザUIで要求を可視化
-  - ツリービュー、検索・フィルター、マトリックスビュー
-  - リサイズ可能なパネル、カスタムビュー設定
-- **バリデーション**: 要求データの整合性チェック
-  - 必須フィールド、依存関係、循環参照の検証
-  - オントロジーベースの段階別バリデーション
-- **自動検証・修正**: 要求変更時の自動品質チェックと修正
-  - 要求追加・更新時に自動的に妥当性を評価
-  - 設定可能な自動修正エンジン（Strict/Suggestモード）
-  - 品質スコアリングと違反レポート
-- **Fix Engine**: ポリシーベースの要求修正エンジン
-  - ポリシー駆動の自動修正（分割、統合、リンク再配線など）
-  - トランザクション境界と可逆性の保証
-  - プレビュー、適用、ロールバック機能
-
-## インストール
+### 1. インストール
 
 ```bash
+git clone https://github.com/sawadari/requirements-mcp-server.git
+cd requirements-mcp-server
 npm install
 npm run build
 ```
 
-## 使い方
-
-### MCPサーバーとして起動
+### 2. MCPサーバーとして起動
 
 ```bash
 npm run dev
 ```
 
-または
+### 3. Claude Codeに接続
 
-```bash
-npm start
-```
-
-### Claude Codeとの統合
-
-Claude Codeの設定ファイル（`claude_desktop_config.json`または`mcp-servers.json`）に以下を追加:
+`.claude/mcp-servers.json` に以下を追加:
 
 ```json
 {
   "mcpServers": {
     "requirements": {
       "command": "node",
-      "args": ["/path/to/requirements-mcp-server/build/index.js"]
+      "args": ["C:/dev/requirements-mcp-server/build/index.js"]
     }
   }
 }
 ```
 
-または、開発モードで使用する場合:
+### 4. 使ってみる
 
-```json
-{
-  "mcpServers": {
-    "requirements": {
-      "command": "npx",
-      "args": ["-y", "tsx", "/path/to/requirements-mcp-server/src/index.ts"]
-    }
-  }
-}
-```
+Claude Codeで自然言語で要求を管理：
 
-## 利用可能なツール
-
-### 1. add_requirement
-新しい要求を追加します。
-
-**パラメータ:**
-- `title` (必須): 要求のタイトル
-- `description` (必須): 要求の詳細説明
-- `priority` (必須): 優先度 (`critical`, `high`, `medium`, `low`)
-- `category` (必須): カテゴリ
-- `tags` (オプション): タグの配列
-- `dependencies` (オプション): 依存する要求のIDの配列
-- `author` (オプション): 作成者
-- `assignee` (オプション): 担当者
-
-**使用例:**
 ```
 新しい要求を追加してください。
 タイトル: ユーザー認証機能
-説明: JWTを使用したユーザー認証システムを実装する
+説明: JWTを使用したユーザー認証システム
 優先度: high
 カテゴリ: セキュリティ
 ```
 
-### 2. get_requirement
-指定されたIDの要求を取得します。
+---
 
-**パラメータ:**
-- `id` (必須): 要求のID
+## 📚 ドキュメント
 
-### 3. list_requirements
-すべての要求の一覧を取得します。
+### 🎓 はじめに
 
-### 4. update_requirement
-既存の要求を更新します。
+| ドキュメント | 説明 |
+|-------------|------|
+| **[インストール](docs/getting-started/installation.md)** | セットアップ手順 |
+| **[クイックスタート](docs/getting-started/quick-start.md)** | 5分で始める |
+| **[チュートリアル](docs/getting-started/tutorial.md)** | 実例で学ぶ |
 
-**パラメータ:**
-- `id` (必須): 更新する要求のID
-- その他のフィールド (オプション): 更新したいフィールドのみ指定
+### 📖 ユーザーガイド
 
-**使用例:**
-```
-要求REQ-123のステータスをin_progressに更新してください。
-```
+| ドキュメント | 説明 |
+|-------------|------|
+| **[MCPツールリファレンス](docs/user-guide/mcp-tools.md)** | 21個のツール完全ガイド ⭐ |
+| **[Webビューアー](docs/user-guide/web-viewer.md)** | ブラウザUIの使い方 |
+| **[バリデーション機能](docs/user-guide/validation.md)** | 品質チェックと自動修正 |
+| **[プロジェクト管理](docs/user-guide/project-management.md)** | 複数プロジェクトの管理 |
 
-### 5. delete_requirement
-要求を削除します。
+### 🔧 高度な機能
 
-**パラメータ:**
-- `id` (必須): 削除する要求のID
+| ドキュメント | 説明 |
+|-------------|------|
+| **[Fix Engine](docs/advanced/fix-engine.md)** | ポリシーベース自動修正 |
+| **[オントロジー](docs/advanced/ontology.md)** | カスタマイズ可能な要求段階 |
+| **[AIチャット統合](docs/advanced/ai-chat.md)** | Claude統合の仕組み |
+| **[手動テスト](docs/advanced/manual-testing.md)** | JSON-RPCでの直接操作 |
 
-### 6. search_requirements
-条件を指定して要求を検索します。
+### 👨‍💻 開発者向け
 
-**パラメータ:**
-- `status` (オプション): ステータスで絞り込み
-- `priority` (オプション): 優先度で絞り込み
-- `category` (オプション): カテゴリで絞り込み
-- `tags` (オプション): タグで絞り込み
-- `searchText` (オプション): テキスト検索
+| ドキュメント | 説明 |
+|-------------|------|
+| **[Miyabi統合](docs/development/miyabi-integration.md)** | 自律型開発フレームワーク |
+| **[ツール管理](docs/development/tool-management.md)** | 機能重複防止システム |
+| **[Issue作成ワークフロー](docs/development/issue-workflow.md)** | GitHub Issue連携 |
+| **[テスト](docs/development/testing.md)** | TDD開発手法 |
 
-**使用例:**
-```
-優先度がhighで、ステータスがdraftの要求を検索してください。
-```
+### 📋 リファレンス
 
-### 7. analyze_impact
-要求の変更がシステムに与える影響を分析します。
+| ドキュメント | 説明 |
+|-------------|------|
+| **[アーキテクチャ](docs/architecture/overview.md)** | システム構造 |
+| **[設計原則](docs/architecture/design-principles.md)** | 要求管理の原則 |
+| **[ロードマップ](docs/reference/roadmap.md)** | 今後の機能追加計画 |
+| **[Claude Code統合](docs/reference/claude-integration.md)** | Claude環境設定 |
 
-**パラメータ:**
-- `id` (必須): 分析する要求のID
-- `proposedChanges` (オプション): 提案する変更内容
+---
 
-**使用例:**
-```
-要求REQ-123の影響範囲を分析してください。
-```
+## 💡 使用例
 
-**返される情報:**
-- 影響を受ける要求のリスト（直接・間接）
-- 推定工数
-- リスク
-- 推奨事項
-
-### 8. get_dependency_graph
-要求の依存関係グラフを取得します。
-
-**パラメータ:**
-- `id` (必須): グラフを取得する要求のID
-
-### 9. propose_change
-要求に対する変更提案を作成します。
-
-**パラメータ:**
-- `targetRequirementId` (必須): 変更対象の要求ID
-- `proposedChanges` (必須): 提案する変更内容の配列
-
-**使用例:**
-```
-要求REQ-123の優先度をhighからcriticalに変更する提案を作成してください。
-理由: セキュリティの脆弱性が発見されたため、緊急対応が必要
-```
-
-### 10. load_policy
-Fix Engineのポリシーファイルを読み込みます。
-
-**パラメータ:**
-- `policyPath` (オプション): ポリシーファイルのパス（デフォルト: `./fix-policy.jsonc`）
-
-**使用例:**
-```
-Fix Engineのポリシーを読み込んでください
-```
-
-**詳細:**
-ポリシーファイルには、要求の自動修正ルール、実行モード（strict/suggest/assist）、停止条件などが定義されています。詳細は[Fix Engineドキュメント](./FIX-ENGINE-README.md)を参照してください。
-
-### 11. preview_fixes
-提案された修正のプレビューを表示します。
-
-**パラメータ:**
-- `changeSetId` (オプション): プレビューするChangeSetのID（省略時は最新）
-
-**使用例:**
-```
-最新の修正提案をプレビューしてください
-```
-
-**詳細:**
-ChangeSetの内容、影響を受ける要求、変更の詳細を確認できます。実際には適用されません。
-
-### 12. apply_fixes
-ChangeSetを適用して要求を修正します。
-
-**パラメータ:**
-- `changeSetId` (必須): 適用するChangeSetのID
-- `force` (オプション): 警告を無視して強制適用するか（デフォルト: false）
-
-**使用例:**
-```
-ChangeSet CS-001を適用してください
-```
-
-**詳細:**
-トランザクション境界が保証され、失敗時は自動ロールバックされます。すべての変更が成功するか、すべてロールバックされるかのどちらかです。
-
-### 13. rollback_fixes
-適用済みのChangeSetをロールバックします。
-
-**パラメータ:**
-- `changeSetId` (必須): ロールバックするChangeSetのID
-
-**使用例:**
-```
-ChangeSet CS-001をロールバックしてください
-```
-
-**詳細:**
-可逆性が保証されているChangeSetのみロールバック可能です。要求が元の状態に戻ります。
-
-## データモデル
-
-### Requirement（要求）
-
-```typescript
-{
-  id: string;              // 要求ID（例: REQ-1234567890）
-  title: string;           // タイトル
-  description: string;     // 詳細説明
-  status: RequirementStatus;  // ステータス
-  priority: RequirementPriority; // 優先度
-  category: string;        // カテゴリ
-  tags: string[];          // タグ
-  dependencies: string[];  // 依存要求のID
-  createdAt: Date;         // 作成日時
-  updatedAt: Date;         // 更新日時
-  author?: string;         // 作成者
-  assignee?: string;       // 担当者
-}
-```
-
-### ステータス
-
-- `draft`: 下書き
-- `proposed`: 提案済み
-- `approved`: 承認済み
-- `in_progress`: 実装中
-- `completed`: 完了
-- `rejected`: 却下
-- `on_hold`: 保留
-
-### 優先度
-
-- `critical`: P0 - 致命的
-- `high`: P1 - 高
-- `medium`: P2 - 中
-- `low`: P3 - 低
-
-## 使用シナリオ例
-
-### シナリオ1: 新しい機能要求の追加
-
-```
-User: 新しい要求を追加したいです。ユーザーがプロフィール画像をアップロードできる機能を追加したい。
-
-Claude: 承知しました。プロフィール画像アップロード機能の要求を追加します。
-[add_requirementツールを使用]
-
-要求を追加しました:
-- ID: REQ-1729180800000
-- タイトル: プロフィール画像アップロード機能
-- 優先度: medium
-- ステータス: draft
-```
-
-### シナリオ2: 影響範囲の分析
-
-```
-User: REQ-1729180800000を実装中に変更したいです。影響範囲を教えてください。
-
-Claude: 影響範囲を分析します。
-[analyze_impactツールを使用]
-
-影響範囲分析の結果:
-- 影響を受ける要求: 3件
-  - REQ-XXX: ユーザープロフィール表示機能 (直接依存)
-  - REQ-YYY: 画像ストレージ設定 (直接依存)
-  - REQ-ZZZ: ユーザー設定画面 (間接依存)
-- 推定工数: 2日
-- リスク:
-  - 既存のプロフィール表示機能への影響があります
-  - 画像ストレージの容量計画の見直しが必要です
-- 推奨事項:
-  - 影響を受ける要求のレビューとテスト計画を作成してください
-  - 段階的な変更とテストを推奨します
-```
-
-### シナリオ3: 変更提案の作成
-
-```
-User: セキュリティ上の理由で、REQ-1729180800000の優先度をcriticalに上げる提案を作成してください。
-
-Claude: 変更提案を作成します。
-[propose_changeツールを使用]
-
-変更提案を作成しました:
-- 提案ID: PROP-1729180900000
-- 対象: REQ-1729180800000
-- 変更内容:
-  - 優先度: medium → critical
-  - 理由: セキュリティの脆弱性対応のため緊急実装が必要
-- 影響分析:
-  - 影響を受ける要求: 3件
-  - 推定工数: 2日
-  - スケジュールへの影響が予想されます
-```
-
-## 自動検証・修正機能
-
-requirements-mcp-serverは、要求変更時に自動的に妥当性を評価し、必要に応じて修正を適用する機能を搭載しています。
-
-### 設定ファイル
-
-設定は `src/auto-validation-config.jsonc` で管理されます:
-
-```jsonc
-{
-  "autoValidation": {
-    "enabled": true,           // 自動検証を有効化
-    "validation": {
-      "useLLM": false,         // LLM評価を使用するか
-      "updateMetrics": true    // NLP指標を更新するか
-    }
-  },
-  "autoFix": {
-    "enabled": true,           // 自動修正を有効化
-    "mode": "strict",          // 修正モード: "strict" | "suggest" | "disabled"
-    "policyFile": "./src/fix-engine/fix-policy.jsonc",
-    "revalidateAfterFix": true,  // 修正後に再検証を実行
-    "maxIterations": 3,          // 最大修正反復回数
-    "fixSeverity": "error"       // 修正対象: "error" | "warning" | "info"
-  },
-  "logging": {
-    "enabled": true,           // ログを記録
-    "verbose": false           // 詳細ログ
-  }
-}
-```
-
-### 動作フロー
-
-1. **要求の追加・更新**
-   - `addRequirement()` または `updateRequirement()` が呼ばれる
-
-2. **自動検証**
-   - ValidationEngineが要求を検証
-   - 階層構造、グラフヘルス、抽象度、MECE、品質スタイルをチェック
-
-3. **自動修正**（違反がある場合）
-   - FixExecutorが修正プランを生成
-   - 設定に応じて自動適用（Strictモード）または提案のみ（Suggestモード）
-   - 修正の適用順序（局所化→波及）:
-
-     | 順序 | 対象 | 説明 |
-     |------|------|------|
-     | 1 | 対象要求 | 違反が発生した要求自体を修正 |
-     | 2 | 親要求 | refinesで参照される上位要求 |
-     | 3 | 兄弟要求 | 同じ親を持つ要求 |
-     | 4 | 子要求 | 対象要求をrefinesする下位要求 |
-     | 5 | 横依存 | dependenciesで参照される要求 |
-     | 6 | テスト | 関連するテストケース |
-
-4. **再検証**
-   - 修正後の要求を再検証
-   - 最終的な品質スコアを計算
-
-### テスト
-
-自動検証・修正機能のテストスクリプト:
+### 例1: 要求を追加して検証
 
 ```bash
-npx tsx scripts/test-auto-validation.ts
+# Claude Codeで実行
+"新しい要求を追加してください"
+→ add_requirement ツールが実行される
+
+"要求REQ-123の妥当性をチェックしてください"
+→ validate_requirement ツールが実行される
 ```
 
-### カスタマイズ
+### 例2: 影響範囲を分析
 
-修正ポリシーは `fix-policy.jsonc` でカスタマイズ可能です。詳細は[Fix Engineドキュメント](./FIX-ENGINE-README.md)を参照してください。
-
-## プロジェクト構造
-
-```
-requirements-mcp-server/
-├── src/
-│   ├── index.ts                    # MCPサーバーのメインエントリーポイント
-│   ├── types.ts                    # 型定義
-│   ├── storage.ts                  # データストレージ層（自動検証統合）
-│   ├── analyzer.ts                 # 影響範囲分析ロジック
-│   ├── validation-service.ts       # 自動検証・修正サービス
-│   ├── auto-validation-config.jsonc # 自動検証設定
-│   ├── validation/                 # 検証エンジン
-│   └── fix-engine/                 # 修正エンジン
-│       ├── types.ts                # 修正エンジン型定義
-│       ├── fix-planner.ts          # 修正プラン生成
-│       ├── fix-executor.ts         # 修正実行
-│       ├── change-engine.ts        # 変更適用
-│       └── fix-policy.jsonc        # 修正ポリシー
-├── data/                           # 要求データ（自動生成）
-│   ├── requirements.json           # 要求データ
-│   └── proposals.json              # 変更提案データ
-├── build/                # ビルド出力（自動生成）
-├── package.json
-├── tsconfig.json
-└── README.md
+```bash
+"要求REQ-123の影響範囲を分析してください"
+→ analyze_impact ツールが実行される
+→ 影響を受ける要求、推定工数、リスクが表示される
 ```
 
-## 開発
+### 例3: Webビューアーで可視化
+
+```bash
+npm run view-server
+# http://localhost:5002 にアクセス
+```
+
+詳細は **[チュートリアル](docs/getting-started/tutorial.md)** を参照
+
+---
+
+## 🌐 Webビューアー
+
+インタラクティブなWebインターフェースで要求を管理：
+
+```bash
+npm run view-server
+```
+
+http://localhost:5002 にアクセス
+
+**主な機能:**
+- ツリービュー（階層構造表示）
+- 検索・フィルター
+- トレーサビリティマトリックス
+- AIチャットアシスタント
+- リアルタイム自動更新
+
+詳細は **[Webビューアーガイド](docs/user-guide/web-viewer.md)** を参照
+
+---
+
+## 🔧 MCPツール（21個）
+
+### CRUD操作（6ツール）
+- `add_requirement` - 要求追加
+- `get_requirement` - 要求取得
+- `list_requirements` - 要求一覧
+- `update_requirement` - 要求更新
+- `delete_requirement` - 要求削除
+- `search_requirements` - 条件検索
+
+### 分析・インサイト（2ツール）
+- `analyze_impact` - 影響範囲分析
+- `get_dependency_graph` - 依存関係グラフ
+
+### バリデーション・品質（3ツール）
+- `validate_requirement` - 単一要求検証
+- `validate_all_requirements` - 全要求検証
+- `get_validation_report` - 検証レポート
+
+### 変更管理（5ツール）
+- `propose_change` - 変更提案作成
+- `load_policy` - ポリシー読込
+- `preview_fixes` - 修正プレビュー
+- `apply_fixes` - 修正適用
+- `rollback_fixes` - ロールバック
+
+### プロジェクト管理（5ツール）
+- `list_projects` - プロジェクト一覧
+- `get_current_project` - 現在のプロジェクト
+- `switch_project` - プロジェクト切替
+- `create_project` - プロジェクト作成
+- `delete_project` - プロジェクト削除
+
+詳細は **[MCPツールリファレンス](docs/user-guide/mcp-tools.md)** を参照
+
+---
+
+## 🏗️ アーキテクチャ
+
+```
+┌──────────────────────────────────────────┐
+│        Claude Code (MCP Client)          │
+└──────────────┬───────────────────────────┘
+               │ JSON-RPC (stdio)
+┌──────────────▼───────────────────────────┐
+│   requirements-mcp-server (21 tools)     │
+├──────────────────────────────────────────┤
+│  ├─ Storage Layer                        │
+│  ├─ Validation Engine (5 domains)        │
+│  ├─ Fix Engine (policy-based)            │
+│  ├─ Analyzer (impact/dependency)         │
+│  └─ Project Manager (multi-project)      │
+└──────────────┬───────────────────────────┘
+               │
+┌──────────────▼───────────────────────────┐
+│   data/requirements.json (storage)       │
+└──────────────────────────────────────────┘
+```
+
+詳細は **[アーキテクチャドキュメント](docs/architecture/overview.md)** を参照
+
+---
+
+## 🤖 Miyabiフレームワーク統合
+
+このプロジェクトは**Miyabi**（自律型開発フレームワーク）で構築されています：
+
+- **7つの自律エージェント** - Coordinator、Issue、CodeGen、Review、PR、Deployment、Test
+- **GitHubをOSとして** - Issue → 実装 → PR → デプロイの自動化
+- **識学理論準拠** - 責任の明確化、権限委譲、曖昧性の排除
+
+詳細は **[Miyabi統合ガイド](docs/development/miyabi-integration.md)** を参照
+
+---
+
+## 🧪 テスト
+
+```bash
+# 全テスト実行
+npm test
+
+# カバレッジレポート
+npm run test:coverage
+
+# Watch mode
+npm run test:watch
+```
+
+目標カバレッジ: **80%+**
+
+---
+
+## 🛠️ 開発
+
+### 開発モード
+
+```bash
+npm run dev
+```
 
 ### ビルド
 
 ```bash
 npm run build
-```
-
-### 開発モード（ホットリロード）
-
-```bash
-npm run dev
 ```
 
 ### 型チェック
@@ -474,156 +283,55 @@ npm run dev
 npm run typecheck
 ```
 
-### テスト
+---
 
-```bash
-npm test
-```
+## 📊 プロジェクト統計
 
-## ビュー機能
+- **MCPツール**: 21個
+- **テストカバレッジ**: 80%+
+- **ドキュメントページ**: 20+
+- **対応言語**: TypeScript (strict mode)
+- **MCP SDK**: 1.20.1
 
-要求データを様々な形式で出力・表示できます。
+---
 
-### 利用可能なビュー
-
-以下の8種類のビューが定義されています:
-
-1. **ステークホルダ要求リスト**: ステークホルダ要求のみを表示
-2. **システム要求リスト**: システム要求のみを表示
-3. **システム機能要求リスト**: 機能要求のみを表示
-4. **全要求一覧**: すべての要求を表示
-5. **ステークホルダ要求-システム要求マトリックス**: トレーサビリティマトリックス
-6. **システム要求-機能要求マトリックス**: トレーサビリティマトリックス
-7. **重要度Critical要求**: 優先度がCriticalの要求のみ
-8. **実装中要求**: ステータスがin_progressの要求のみ
-
-### ビューの生成
-
-```bash
-npx tsx scripts/generate-views.ts
-```
-
-これにより、`views/` ディレクトリ配下にMarkdown、HTML、CSV形式でビューファイルが生成されます。
-
-### VSCodeでの表示
-
-#### Markdownファイル
-1. VSCodeでファイルを開く
-2. `Ctrl+Shift+V` (Windows/Linux) または `Cmd+Shift+V` (Mac) でプレビュー
-3. プレビューを開いたまま、要求を更新すると**自動的にプレビューも更新されます**
-
-**自動更新の動作:**
-- 要求の追加・更新・削除を行うと、すべてのビューファイルが自動再生成されます
-- VSCodeのMarkdownプレビューは、ファイル変更を検知して自動的に表示を更新します
-- プレビューウィンドウを閉じる必要はありません
-
-#### 推奨VSCode拡張機能
-プロジェクトを開くと、以下の拡張機能のインストールが推奨されます:
-- **Markdown All in One**: Markdownのプレビューと編集
-- **Markdown Preview Enhanced**: 高機能なMarkdownプレビュー
-- **Excel Viewer**: CSV/TSVファイルを表形式で表示
-- **Rainbow CSV**: CSVファイルをカラフルに表示
-- **Live Server**: HTMLファイルをブラウザで表示
-
-#### リアルタイム監視の確認方法
-1. `views/markdown/in-progress-requirements.md` を開いてプレビュー表示
-2. 別のターミナルで要求のステータスを更新:
-   ```bash
-   npx tsx scripts/test-auto-update.ts
-   ```
-3. プレビューが自動的に更新されることを確認
-
-詳細は `views/README.md` を参照してください。
-
-## Miyabiフレームワークとの統合
-
-このプロジェクトはMiyabiフレームワークで構築されており、以下の自動化機能が利用できます:
-
-- **自動Issue管理**: GitHubのIssueから自動的にタスクを処理
-- **AI Agents**: 6つの専門エージェントによる自律開発
-- **ラベル駆動**: 46種類のラベルによる状態管理
-- **自動PR作成**: Issue → 実装 → PR の自動フロー
-
-詳細は`.claude/`ディレクトリと`CLAUDE.md`を参照してください。
-
-## Webビューアー
-
-要求管理システムには、インタラクティブなWebビューアーが付属しています。
-
-### 起動方法
-
-```bash
-npm run view-server
-```
-
-ブラウザで http://localhost:5002 にアクセスしてください。
-
-### 主な機能
-
-#### 1. ツリービュー
-- 要求を階層構造で表示
-- カテゴリ別（ステークホルダ要求、システム要求、システム機能要求）にグループ化
-- 要求をクリックすると右側に詳細表示
-
-#### 2. Search & Filter（検索・フィルター）
-- **リサイズ可能**: 上端をドラッグして表示領域を調整可能
-- **キーワード検索**: 要求のタイトル、説明、IDで検索
-- **フィルター機能**:
-  - ステータス
-  - 優先度
-  - カテゴリ
-  - 作成者（動的に生成）
-  - タグ（カンマ区切りで複数指定可能）
-- **ビュー選択**:
-  - リスト: 検索結果を一覧表示
-  - マトリックス: ステークホルダ→システム: ステークホルダ要求とシステム要求のトレーサビリティマトリックス
-  - マトリックス: システム→機能: システム要求とシステム機能要求のトレーサビリティマトリックス
-
-#### 3. マトリックスビュー
-要求間の依存関係を2次元マトリックス形式で可視化します。
-- 行: 上位要求（例: ステークホルダ要求）
-- 列: 下位要求（例: システム要求）
-- ●マーク: 依存関係がある箇所
-
-#### 4. カスタムビュー設定
-`view-config.json` ファイルを編集することで、独自のビューを追加できます。
-
-**例: カスタムマトリックスの追加**
-```json
-{
-  "views": [
-    {
-      "id": "custom-matrix-1",
-      "name": "カスタムマトリックス",
-      "type": "matrix",
-      "description": "ステークホルダ要求とシステム機能要求の直接マトリックス",
-      "rowType": "stakeholder",
-      "colType": "functional",
-      "rowName": "ステークホルダ要求",
-      "colName": "システム機能要求"
-    }
-  ]
-}
-```
-
-サーバーを再起動すると、新しいビューが「ビュー」ドロップダウンに表示されます。
-
-#### 5. Claudeアシスタント
-- 右側のチャットパネルで要求管理についてClaudeに質問可能
-- 要求の追加、検索、依存関係分析などをサポート
-
-#### 6. 自動更新
-- ファイルシステムの変更を検知して自動リフレッシュ（5秒間隔）
-- 常に最新の要求情報を表示
-
-## ライセンス
-
-MIT
-
-## 貢献
+## 🤝 貢献
 
 Issue、Pull Requestを歓迎します。
 
-## サポート
+開発に参加する場合は以下を参照：
+- [開発者ガイド](docs/development/miyabi-integration.md)
+- [ツール管理](docs/development/tool-management.md)
+- [Issue作成ワークフロー](docs/development/issue-workflow.md)
 
-質問や問題がある場合は、GitHubのIssueで報告してください。
+---
+
+## 📄 ライセンス
+
+MIT License - 詳細は [LICENSE](LICENSE) を参照
+
+---
+
+## 🔗 リンク
+
+- **プロジェクトサイト**: https://sawadari.github.io/requirements-mcp-server/
+- **組織憲章**: https://sawadari.github.io/principle/
+- **Model Context Protocol**: https://modelcontextprotocol.io/
+- **Claude Code**: https://docs.claude.com/claude-code
+- **Miyabi Framework**: https://github.com/ShunsukeHayashi/Autonomous-Operations
+
+---
+
+## 📞 サポート
+
+質問や問題がある場合は、[GitHub Issues](https://github.com/sawadari/requirements-mcp-server/issues)で報告してください。
+
+---
+
+<div align="center">
+
+**🌸 Miyabi - Beauty in Autonomous Development**
+
+Made with ❤️ using Claude Code and Miyabi Framework
+
+</div>
