@@ -61,6 +61,10 @@ function Execute-Action {
         "text" {
             Type-Text -Text $Action.content -Wait $Action.wait
         }
+        "clipboard" {
+            Set-Clipboard -Value $Action.content
+            Start-Sleep -Milliseconds $Action.wait
+        }
         "mouse_move" {
             Move-Mouse -X $Action.x -Y $Action.y -Wait $Action.wait
         }

@@ -1,90 +1,63 @@
 {
   "id": "01-basic-usage",
   "title": "requirements-mcp-server 基本的な使い方",
-  "duration": "120秒",
-  "description": "MCPサーバー起動からWebビューアーでの要求管理まで",
+  "duration": "60秒",
+  "description": "MCPサーバー起動とClaude Codeでの要求追加デモ",
   "scenes": [
     {
       "id": "intro",
-      "duration": 10,
-      "narration": "requirements-mcp-serverは、Claude Codeと連携する要求管理システムです。MCPプロトコルを使用して、AIと対話しながら要求を管理できます。",
+      "duration": 5,
+      "narration": "requirements-mcp-serverは、Claude Codeと連携する要求管理システムです。",
       "actions": [
-        {"type": "focus", "target": "vscode", "wait": 1000},
-        {"type": "show_text", "text": "requirements-mcp-server", "position": "center"}
+        {"type": "wait", "duration": 5000}
       ]
     },
     {
       "id": "start-mcp-server",
-      "duration": 20,
+      "duration": 15,
       "narration": "まず、MCPサーバーを起動します。ターミナルでnpm run devコマンドを実行すると、21個のMCPツールが読み込まれます。",
       "actions": [
-        {"type": "focus", "target": "vscode", "wait": 500},
-        {"type": "keystroke", "keys": "ctrl+`", "wait": 1000},
-        {"type": "text", "content": "npm run dev", "wait": 500},
-        {"type": "keystroke", "keys": "enter", "wait": 3000},
-        {"type": "highlight", "text": "21 tools loaded", "wait": 2000}
+        {"type": "keystroke", "keys": "^{`}", "wait": 1000},
+        {"type": "clipboard", "content": "cd requirements-mcp-server", "wait": 500},
+        {"type": "keystroke", "keys": "^v", "wait": 500},
+        {"type": "keystroke", "keys": "{ENTER}", "wait": 1000},
+        {"type": "clipboard", "content": "npm run dev", "wait": 500},
+        {"type": "keystroke", "keys": "^v", "wait": 500},
+        {"type": "keystroke", "keys": "{ENTER}", "wait": 8000}
       ]
     },
     {
       "id": "start-web-viewer",
-      "duration": 15,
+      "duration": 12,
       "narration": "次に、Webビューアーを起動します。別のターミナルでnpm run view-serverを実行します。",
       "actions": [
-        {"type": "keystroke", "keys": "ctrl+shift+`", "wait": 1000},
-        {"type": "text", "content": "npm run view-server", "wait": 500},
-        {"type": "keystroke", "keys": "enter", "wait": 3000}
-      ]
-    },
-    {
-      "id": "open-browser",
-      "duration": 10,
-      "narration": "ブラウザでlocalhost:5002にアクセスすると、Webビューアーが表示されます。",
-      "actions": [
-        {"type": "focus", "target": "browser", "wait": 1000},
-        {"type": "navigate", "url": "http://localhost:5002", "wait": 2000},
-        {"type": "scroll", "direction": "down", "amount": 200, "wait": 1000}
+        {"type": "keystroke", "keys": "^+{`}", "wait": 1000},
+        {"type": "clipboard", "content": "npm run view-server", "wait": 500},
+        {"type": "keystroke", "keys": "^v", "wait": 500},
+        {"type": "keystroke", "keys": "{ENTER}", "wait": 5000},
+        {"type": "wait", "duration": 5000}
       ]
     },
     {
       "id": "add-requirement-claude",
-      "duration": 30,
-      "narration": "Claude Codeに要求を追加してもらいます。『新しい要求を追加してください。タイトルはユーザー認証機能』と入力します。",
-      "actions": [
-        {"type": "focus", "target": "vscode", "wait": 500},
-        {"type": "focus", "target": "claude-code", "wait": 1000},
-        {"type": "text", "content": "新しい要求を追加してください。タイトルは「ユーザー認証機能」、説明は「JWTトークンを使用したユーザー認証機能を実装する」", "wait": 500},
-        {"type": "keystroke", "keys": "enter", "wait": 5000},
-        {"type": "highlight", "text": "add_requirement", "wait": 2000}
-      ]
-    },
-    {
-      "id": "check-web-viewer",
-      "duration": 15,
-      "narration": "Webビューアーを確認すると、追加した要求が自動的に反映されています。リアルタイムで更新されます。",
-      "actions": [
-        {"type": "focus", "target": "browser", "wait": 1000},
-        {"type": "scroll", "direction": "up", "amount": 200, "wait": 1000},
-        {"type": "highlight", "text": "ユーザー認証機能", "wait": 2000},
-        {"type": "click", "element": "requirement-item", "wait": 1000}
-      ]
-    },
-    {
-      "id": "show-matrix-view",
       "duration": 20,
-      "narration": "トレーサビリティマトリックスビューでは、要求間の依存関係を視覚的に確認できます。",
+      "narration": "Claude Codeで要求を追加します。新しい要求を追加してくださいと入力すると、AIが自動的にadd requirementツールを使用します。",
       "actions": [
-        {"type": "click", "element": "view-selector", "wait": 500},
-        {"type": "click", "element": "matrix-view", "wait": 2000},
-        {"type": "scroll", "direction": "down", "amount": 300, "wait": 2000},
-        {"type": "highlight", "text": "dependency-matrix", "wait": 2000}
+        {"type": "keystroke", "keys": "^+p", "wait": 1000},
+        {"type": "clipboard", "content": "Claude", "wait": 500},
+        {"type": "keystroke", "keys": "^v", "wait": 500},
+        {"type": "keystroke", "keys": "{ENTER}", "wait": 2000},
+        {"type": "clipboard", "content": "新しい要求を追加してください。タイトルは「ユーザー認証機能」", "wait": 500},
+        {"type": "keystroke", "keys": "^v", "wait": 500},
+        {"type": "keystroke", "keys": "{ENTER}", "wait": 12000}
       ]
     },
     {
       "id": "outro",
-      "duration": 10,
-      "narration": "requirements-mcp-serverを使えば、AIと対話しながら効率的に要求管理ができます。詳細はGitHubをご覧ください。",
+      "duration": 8,
+      "narration": "requirements-mcp-serverを使えば、AIと対話しながら効率的に要求管理ができます。",
       "actions": [
-        {"type": "show_text", "text": "github.com/sawadari/requirements-mcp-server", "position": "center", "wait": 3000}
+        {"type": "wait", "duration": 8000}
       ]
     }
   ]

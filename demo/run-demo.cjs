@@ -168,9 +168,15 @@ async function main() {
   const options = {
     dryRun: dryRun,
     skipRecording: args.includes('--skip-recording') || dryRun, // dry-runの場合は録画もスキップ
-    obsHost: args.includes('--obs-host') ? args[args.indexOf('--obs-host') + 1] : undefined,
-    obsPassword: args.includes('--obs-password') ? args[args.indexOf('--obs-password') + 1] : undefined,
   };
+
+  // オプションが指定されている場合のみ設定（デフォルト値を使うため）
+  if (args.includes('--obs-host')) {
+    options.obsHost = args[args.indexOf('--obs-host') + 1];
+  }
+  if (args.includes('--obs-password')) {
+    options.obsPassword = args[args.indexOf('--obs-password') + 1];
+  }
 
   const runner = new DemoRunner(scenarioPath, options);
   await runner.init();
