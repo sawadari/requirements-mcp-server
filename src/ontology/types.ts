@@ -24,6 +24,9 @@ export interface StageDefinition {
   /** 子要求を持てるか */
   canHaveChildren: boolean;
 
+  /** 子要求が必須か */
+  requiresChildren?: boolean;
+
   /** 親要求を持てるか */
   canHaveParent: boolean;
 

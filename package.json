@@ -31,7 +31,11 @@
     "clean:all": "npm run clean:force && npm run clean:modules && npm run clean:cache",
     "demo:narration": "node demo/generate-narration.cjs",
     "demo:run": "node demo/run-demo.cjs demo/scenarios/01-basic-usage.json",
-    "demo:dry-run": "node demo/run-demo.cjs demo/scenarios/01-basic-usage.json --dry-run"
+    "demo:dry-run": "node demo/run-demo.cjs demo/scenarios/01-basic-usage.json --dry-run",
+    "add-req": "tsx scripts/add-requirement.ts",
+    "add-req:qa": "tsx scripts/add-requirement-with-qa.ts",
+    "validate": "tsx scripts/validate-project.ts",
+    "validate:all": "tsx scripts/validate-project.ts"
   },
   "keywords": [
     "mcp",

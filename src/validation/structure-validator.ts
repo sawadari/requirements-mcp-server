@@ -222,6 +222,77 @@ export class HierarchyValidator {
 
     return violations;
   }
+
+  /**
+   * A5: 子要求の存在チェック（オントロジー対応）
+   * ステークホルダ要求とシステム要求は子要求が必要
+   */
+  static validateChildExistence(
+    req: Requirement,
+    allRequirements: Map<string, Requirement>,
+    rule: ValidationRule
+  ): ValidationViolation[] {
+    const violations: ValidationViolation[] = [];
+
+    // オントロジーマネージャーから子要求が必要なタイプを取得
+    let requireChild: string[];
+    let expectedChildTypes: string[] = [];
+
+    console.log(`[A5デバッグ] ${req.id} (${req.type}) の検証開始`);
+
+    if (HierarchyValidator.ontologyManager) {
+      const stages = HierarchyValidator.ontologyManager.getAllStages();
+      const stage = stages.find(s => s.id === req.type);
+      console.log(`[A5デバッグ] stage見つかった: ${!!stage}, requiresChildren: ${stage?.requiresChildren}, childStages: ${stage?.childStages?.length || 0}`);
+
+      // requiresChildren フィールドをチェック（明示的にtrueの場合のみ必須）
+      if (stage && stage.requiresChildren === true) {
+        if (stage.childStages.length > 0) {
+          expectedChildTypes = stage.childStages;
+        }
+        requireChild = [stage.id];
+        console.log(`[A5デバッグ] ${req.type} は子要求が必須と判定`);
+      } else {
+        requireChild = [];
+        console.log(`[A5デバッグ] ${req.type} は子要求が不要と判定`);
+      }
+    } else {
+      // デフォルト: stakeholder と system は子要求が必要
+      requireChild = rule.parameters?.requireChild || ['stakeholder', 'system'];
+      console.log(`[A5デバッグ] オントロジーなし、デフォルトルール適用: ${requireChild}`);
+    }
+
+    const reqType = req.type as string;
+    console.log(`[A5デバッグ] requireChild.includes(${reqType}): ${requireChild.includes(reqType)}`);
+
+    if (requireChild.includes(reqType)) {
+      // 子要求があるかチェック（このreqを親として参照している要求を探す）
+      const hasChildren = Array.from(allRequirements.values()).some(
+        (otherReq) => otherReq.refines && otherReq.refines.includes(req.id)
+      );
+
+      if (!hasChildren) {
+
+        violations.push({
+          id: `${rule.id}-${req.id}`,
+          requirementId: req.id,
+          ruleDomain: 'hierarchy',
+          ruleId: rule.id,
+          severity: rule.severity,
+          message: `${req.type}要求には子要求が必要です`,
+          details: expectedChildTypes.length > 0
+            ? `この要求を詳細化する${expectedChildTypes.join('または')}要求を追加してください`
+            : `この要求を詳細化する下位要求を追加してください`,
+          suggestedFix: expectedChildTypes.length > 0
+            ? `${expectedChildTypes[0]}要求を作成し、refinesフィールドで「${req.id}」を参照させてください`
+            : undefined,
+          detectedAt: new Date().toISOString(),
+        });
+      }
+    }
+
+    return violations;
+  }
 }
 
 /**
@@ -477,6 +548,9 @@ export class StructureValidationEngine {
           break;
         case 'A4':
           violations.push(...HierarchyValidator.validateMaxDepth(req, allRequirements, rule));
+          break;
+        case 'A5':
+          violations.push(...HierarchyValidator.validateChildExistence(req, allRequirements, rule));
           break;
 
         // グラフヘルス（要求単位）

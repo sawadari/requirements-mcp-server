@@ -49,6 +49,17 @@
         "parameters": {
           "maxDepth": 3
         }
+      },
+      {
+        "id": "A5",
+        "domain": "hierarchy",
+        "name": "子要求の存在チェック",
+        "description": "stakeholder要求とsystem要求は少なくとも1つの子要求を持つ必要がある",
+        "severity": "error",
+        "enabled": true,
+        "parameters": {
+          "requireChild": ["stakeholder", "system"]
+        }
       }
     ],
 

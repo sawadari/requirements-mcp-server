@@ -49,23 +49,7 @@
     "watch-project": {
       "projectName": "腕時計プロジェクト",
       "useDefaultRules": true,
-      "customTypes": {
-        "stakeholder": {
-          "prefix": "WTK",
-          "description": "腕時計ステークホルダ要求",
-          "example": "WTK-001"
-        },
-        "system": {
-          "prefix": "WSY",
-          "description": "腕時計システム要求",
-          "example": "WSY-001"
-        },
-        "system_functional": {
-          "prefix": "WFC",
-          "description": "腕時計機能要求",
-          "example": "WFC-001"
-        }
-      }
+      "customTypes": {}
     }
   },
   "notes": [

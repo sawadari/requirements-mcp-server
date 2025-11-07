@@ -89,6 +89,17 @@ export class RuleConfigLoader {
               requireParent: ['system', 'system_functional'],
             },
           },
+          {
+            id: 'A5',
+            domain: 'hierarchy',
+            name: '子要求の存在チェック',
+            description: 'stakeholder/system要求は子要求を持つ必要がある',
+            severity: 'error',
+            enabled: true,
+            parameters: {
+              requireChild: ['stakeholder', 'system'],
+            },
+          },
         ],
         graph_health: [
           {
@@ -181,6 +192,9 @@ export class ValidationEngine {
 
     // A: 階層ルール
     const hierarchyRules = this.config.rules.hierarchy.filter(r => r.enabled);
+    if (req.id === 'SYS-002' || req.id === 'SYS-003') {
+      console.log(`[Engine] ${req.id} の階層ルール数: ${hierarchyRules.length}, ルールID: ${hierarchyRules.map(r => r.id).join(', ')}`);
+    }
     const hierarchyViolations = StructureValidationEngine.validateRequirement(
       req,
       allRequirements,
