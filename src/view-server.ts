@@ -2504,7 +2504,22 @@ app.get('/old', (req, res) => {
       eventSource.onmessage = async (event) => {
         const data = JSON.parse(event.data);
 
-        if (currentView && data.changed) {
+        // データファイル（JSON）が変更された場合
+        if (data.dataChanged) {
+          console.log('データファイルが更新されました。再読み込みします...');
+          if (currentView) {
+            await loadView(currentView);
+          }
+
+          // 更新インジケータを表示
+          const indicator = document.getElementById('refreshIndicator');
+          indicator.classList.add('show');
+          setTimeout(() => {
+            indicator.classList.remove('show');
+          }, 2000);
+        }
+        // ビューファイル（Markdown）が変更された場合
+        else if (currentView && data.changed) {
           // 現在のビューが更新されたかチェック
           const shouldReload = data.changed.some(file =>
             file.includes(currentView.id)
@@ -2573,9 +2588,10 @@ app.get('/api/watch', (req, res) => {
   res.setHeader('Connection', 'keep-alive');
 
   const viewsDir = path.join(process.cwd(), 'views', 'markdown');
+  const dataDir = path.join(process.cwd(), 'data');
 
-  // chokidarでファイル変更を監視
-  const watcher = chokidar.watch(viewsDir, {
+  // chokidarでファイル変更を監視（ビューとデータの両方）
+  const watcher = chokidar.watch([viewsDir, dataDir], {
     ignoreInitial: true,
     awaitWriteFinish: {
       stabilityThreshold: 200,
@@ -2584,8 +2600,24 @@ app.get('/api/watch', (req, res) => {
   });
 
   watcher.on('change', (filePath) => {
-    const changed = [path.basename(filePath, '.md')];
-    res.write(`data: ${JSON.stringify({ changed })}\n\n`);
+    // ビューファイルの変更
+    if (filePath.endsWith('.md')) {
+      const changed = [path.basename(filePath, '.md')];
+      res.write(`data: ${JSON.stringify({ changed })}\n\n`);
+    }
+    // データファイル（JSON）の変更
+    else if (filePath.endsWith('.json')) {
+      console.log(`[Watch] Data file changed: ${path.basename(filePath)}`);
+      res.write(`data: ${JSON.stringify({ dataChanged: true })}\n\n`);
+    }
+  });
+
+  watcher.on('add', (filePath) => {
+    // 新しいデータファイルが追加された場合も通知
+    if (filePath.endsWith('.json')) {
+      console.log(`[Watch] New data file added: ${path.basename(filePath)}`);
+      res.write(`data: ${JSON.stringify({ dataChanged: true })}\n\n`);
+    }
   });
 
   // クライアントが接続を切った時にwatcherをクリーンアップ
