@@ -12,17 +12,28 @@ const { promisify } = require('util');
 const execAsync = promisify(exec);
 
 async function generateAudioWithPowerShell(text, outputPath) {
-  // PowerShellスクリプトで音声生成
+  // 一時PowerShellスクリプトファイルを作成
+  const tempScriptPath = path.join(__dirname, 'temp-tts.ps1');
   const psScript = `
 Add-Type -AssemblyName System.Speech
 $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer
 $synth.SetOutputToWaveFile("${outputPath.replace(/\\/g, '\\\\')}")
 $synth.Rate = 0
-$synth.Speak("${text.replace(/"/g, '`"')}")
+$synth.Speak(@"
+${text}
+"@)
 $synth.Dispose()
   `.trim();
 
-  await execAsync(`powershell -Command "${psScript}"`);
+  // UTF8 BOMでスクリプトファイルを作成
+  await fs.writeFile(tempScriptPath, '\uFEFF' + psScript, 'utf-8');
+
+  try {
+    await execAsync(`powershell -ExecutionPolicy Bypass -File "${tempScriptPath}"`);
+  } finally {
+    // 一時ファイルを削除
+    await fs.unlink(tempScriptPath).catch(() => {});
+  }
 }
 
 async function generateNarration(scenarioPath) {
