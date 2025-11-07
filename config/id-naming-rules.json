@@ -1,0 +1,77 @@
+{
+  "$schema": "./id-naming-rules-schema.json",
+  "version": "1.0.0",
+  "description": "要求ID命名規則の設定ファイル。プロジェクトごとにカスタマイズ可能。",
+  "defaultRules": {
+    "format": "{PREFIX}-{NUMBER}",
+    "numberFormat": "sequential",
+    "numberPadding": 3,
+    "separator": "-"
+  },
+  "typeBasedRules": {
+    "stakeholder": {
+      "prefix": "STK",
+      "description": "ステークホルダ要求",
+      "example": "STK-001"
+    },
+    "system": {
+      "prefix": "SYS",
+      "description": "システム要求",
+      "example": "SYS-001"
+    },
+    "system_functional": {
+      "prefix": "FUNC",
+      "description": "システム機能要求",
+      "example": "FUNC-001"
+    },
+    "system_non_functional": {
+      "prefix": "NFR",
+      "description": "非機能要求",
+      "example": "NFR-001"
+    },
+    "constraint": {
+      "prefix": "CON",
+      "description": "制約要求",
+      "example": "CON-001"
+    },
+    "interface": {
+      "prefix": "IF",
+      "description": "インターフェース要求",
+      "example": "IF-001"
+    }
+  },
+  "projectSpecificRules": {
+    "requirements": {
+      "projectName": "自動搬送車プロジェクト",
+      "useDefaultRules": true,
+      "customTypes": {}
+    },
+    "watch-project": {
+      "projectName": "腕時計プロジェクト",
+      "useDefaultRules": true,
+      "customTypes": {
+        "stakeholder": {
+          "prefix": "WTK",
+          "description": "腕時計ステークホルダ要求",
+          "example": "WTK-001"
+        },
+        "system": {
+          "prefix": "WSY",
+          "description": "腕時計システム要求",
+          "example": "WSY-001"
+        },
+        "system_functional": {
+          "prefix": "WFC",
+          "description": "腕時計機能要求",
+          "example": "WFC-001"
+        }
+      }
+    }
+  },
+  "notes": [
+    "typeBasedRules: 要求タイプごとのデフォルトID接頭辞",
+    "projectSpecificRules: プロジェクトごとのカスタマイズ設定",
+    "useDefaultRules=false の場合、customTypesのみ使用",
+    "customTypesが定義されている場合、typeBasedRulesより優先"
+  ]
+}
