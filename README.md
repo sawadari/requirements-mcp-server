@@ -41,8 +41,20 @@ npm run build
 
 ### 2. MCPサーバーとして起動
 
+**MCPサーバー + Webビューアー（推奨）:**
 ```bash
 npm run dev
+```
+→ MCPサーバーとWebビューアー (http://localhost:5002) が同時起動
+
+**MCPサーバーのみ:**
+```bash
+npm run mcp-only
+```
+
+**Webビューアーのみ:**
+```bash
+npm run view-server
 ```
 
 ### 3. Claude Codeに接続
