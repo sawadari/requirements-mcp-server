@@ -36,7 +36,9 @@
     "add-req": "tsx scripts/add-requirement.ts",
     "add-req:qa": "tsx scripts/add-requirement-with-qa.ts",
     "validate": "tsx scripts/validate-project.ts",
-    "validate:all": "tsx scripts/validate-project.ts"
+    "validate:all": "tsx scripts/validate-project.ts",
+    "delete-project": "tsx scripts/delete-project.ts",
+    "list-projects": "tsx scripts/list-projects.ts"
   },
   "keywords": [
     "mcp",
