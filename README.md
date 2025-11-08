@@ -108,6 +108,7 @@ Claude Codeで自然言語で要求を管理：
 
 | ドキュメント | 説明 |
 |-------------|------|
+| **[機能実装ワークフロー](docs/development/feature-implementation-workflow.md)** ⭐ | 設計整合・影響分析・TDD標準手順 |
 | **[Miyabi統合](docs/development/miyabi-integration.md)** | 自律型開発フレームワーク |
 | **[ツール管理](docs/development/tool-management.md)** | 機能重複防止システム |
 | **[Issue作成ワークフロー](docs/development/issue-workflow.md)** | GitHub Issue連携 |

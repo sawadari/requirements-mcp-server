@@ -11,10 +11,16 @@ escalation: TechLead (アーキテクチャ問題時)
 
 GitHub Issueの内容を解析し、Claude Sonnet 4 APIを使用して必要なコード実装を自動生成します。
 
+**重要**: 実装前に必ず [機能実装ワークフロー](../../docs/development/feature-implementation-workflow.md) に従ってください。
+
 ## 責任範囲
 
-- Issue内容の理解と要件抽出
-- TypeScriptコード自動生成（Strict mode準拠）
+- Issue内容の理解と要求抽出
+- **Phase 0-2**: 要求明確化、設計整合性確認、影響分析の実施
+- **Phase 3**: テスト設計 (TDD準備)
+- **Phase 4**: TypeScriptコード自動生成（Strict mode準拠、TDD）
+- **Phase 5**: ドキュメント更新
+- **Phase 6**: レビュー・検証
 - ユニットテスト自動生成（Vitest）
 - 型定義の追加
 - JSDocコメントの生成
@@ -40,15 +46,23 @@ GitHub Issueの内容を解析し、Claude Sonnet 4 APIを使用して必要な�
 ## 成功条件
 
 ✅ **必須条件**:
+- 機能実装ワークフローの全Phaseを完了している
 - コードがビルド成功する
 - TypeScriptエラー0件
 - ESLintエラー0件
-- 基本的なテストが生成される
+- **テストを先に書いた (TDD)**
+- 全テストが通る
 
 ✅ **品質条件**:
 - 品質スコア: 80点以上（ReviewAgent判定）
 - テストカバレッジ: 80%以上
 - セキュリティスキャン: 合格
+
+✅ **設計整合性**:
+- アーキテクチャ図に反映されている (必要な場合)
+- GLOSSARYの用語に従っている
+- 設計原則に準拠している
+- 影響分析を実施している
 
 ## エスカレーション条件
 
@@ -60,14 +74,73 @@ GitHub Issueの内容を解析し、Claude Sonnet 4 APIを使用して必要な�
 - 外部システム統合が必要
 - BaseAgentパターンに適合しない
 
-## 実装パターン
+## 実装ワークフロー
 
-### BaseAgent拡張
+### 必須ステップ
+
+実装前に以下を実施してください:
+
+```bash
+# 1. ワークフローを確認
+cat docs/development/feature-implementation-workflow.md
+
+# 2. 用語を確認
+cat docs/GLOSSARY.md
+
+# 3. アーキテクチャを確認
+cat docs/architecture/overview.md
+
+# 4. 設計原則を確認
+cat docs/architecture/design-principles.md
+```
+
+### 実装フェーズ
+
+```
+Phase 0: 準備
+  └─ 要求明確化、用語確認
+
+Phase 1: 設計整合性確認 ⚠️ 必須
+  ├─ アーキテクチャ確認
+  ├─ 設計原則確認
+  └─ 既存コンポーネント確認
+
+Phase 2: 影響分析 ⚠️ 必須
+  ├─ 依存関係特定
+  ├─ 影響範囲評価
+  └─ リスク評価
+
+Phase 3: テスト設計 (TDD) ⚠️ 必須
+  ├─ テストケース設計
+  └─ テストファイル作成 (先に!)
+
+Phase 4: 実装 (TDD)
+  ├─ 🔴 Red: テスト失敗確認
+  ├─ 🟢 Green: 最小実装
+  └─ 🔵 Refactor: リファクタリング
+
+Phase 5: ドキュメント更新 ⚠️ 必須
+  ├─ overview.md更新
+  ├─ GLOSSARY.md更新
+  └─ README.md更新
+
+Phase 6: レビュー・検証
+  ├─ セルフレビュー
+  ├─ 影響確認
+  └─ 動作確認
+```
+
+### BaseAgent拡張パターン
 
 ```typescript
 import { BaseAgent } from '../base-agent.js';
 import { AgentResult, Task } from '../types/index.js';
 
+/**
+ * 新機能Agent
+ *
+ * @see docs/development/feature-implementation-workflow.md
+ */
 export class NewAgent extends BaseAgent {
   constructor(config: any) {
     super('NewAgent', config);
@@ -77,6 +150,9 @@ export class NewAgent extends BaseAgent {
     this.log('🤖 NewAgent starting');
 
     try {
+      // Phase 1-2: 設計確認・影響分析を実施済みであることを前提
+      // Phase 3-4: TDDで実装済み
+
       // 実装
 
       return {
