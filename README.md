@@ -15,7 +15,7 @@
 ## ✨ 主な機能
 
 ### コア機能 (MCPサーバー)
-- **🔧 21個のMCPツール** - CRUD (5), 検索・分析 (3), 検証 (3), Fix Engine (4), 変更管理 (1), プロジェクト管理 (5)
+- **🔧 22個のMCPツール** - CRUD (5), 検索・分析 (3), 検証 (3), Fix Engine (4), 変更管理 (1), プロジェクト管理 (6)
 - **✅ 自動検証** - 5つのドメインで品質チェック（階層、グラフ、抽象度、MECE、スタイル）
 - **🔄 Fix Engine** - ポリシーベースの自動修正とロールバック (6種類の修正操作)
 - **🎯 オントロジー管理** - カスタマイズ可能な要求段階定義
@@ -180,7 +180,7 @@ http://localhost:5002 にアクセス
 
 ---
 
-## 🔧 MCPツール（21個）
+## 🔧 MCPツール（22個）
 
 ### CRUD操作（5ツール）
 - `add_requirement` - 要求追加
@@ -208,12 +208,13 @@ http://localhost:5002 にアクセス
 - `apply_fixes` - 修正適用
 - `rollback_fixes` - ロールバック
 
-### プロジェクト管理（5ツール）
+### プロジェクト管理（6ツール）
 - `list_projects` - プロジェクト一覧
 - `get_current_project` - 現在のプロジェクト
 - `switch_project` - プロジェクト切替
 - `create_project` - プロジェクト作成
 - `delete_project` - プロジェクト削除
+- `infer_and_switch_project` - 自然言語からプロジェクト推論・切替
 
 詳細は **[MCPツールリファレンス](docs/user-guide/mcp-tools.md)** を参照
 
@@ -227,9 +228,9 @@ http://localhost:5002 にアクセス
 └──────────────┬───────────────────────────┘
                │ JSON-RPC (stdio)
 ┌──────────────▼───────────────────────────┐
-│   requirements-mcp-server (21 tools)     │
+│   requirements-mcp-server (22 tools)     │
 ├──────────────────────────────────────────┤
-│  MCP Layer: 21 Tool Handlers             │
+│  MCP Layer: 22 Tool Handlers             │
 │  Business: Analyzer, Validator           │
 │  Fix Engine: Executor, Planner, Change   │
 │  Ontology: OntologyManager               │
@@ -298,7 +299,7 @@ npm run typecheck
 
 ## 📊 プロジェクト統計
 
-- **MCPツール**: 21個
+- **MCPツール**: 22個
 - **テストカバレッジ**: 80%+
 - **ドキュメントページ**: 20+
 - **対応言語**: TypeScript (strict mode)

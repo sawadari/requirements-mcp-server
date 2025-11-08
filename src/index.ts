@@ -28,6 +28,7 @@ import { toRequirementRecord, toFixEngineRequirements, toStorageRequirement } fr
 import { createLogger } from './common/logger.js';
 import { ValidationTools } from './tools/validation-tools.js';
 import { BatchTools } from './tools/batch-tools.js';
+import { inferProjectFromQuery } from './project-inference.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -140,6 +141,10 @@ const CreateProjectSchema = z.object({
 
 const DeleteProjectSchema = z.object({
   projectId: z.string().describe('削除するプロジェクトID'),
+});
+
+const InferAndSwitchProjectSchema = z.object({
+  query: z.string().describe('プロジェクトを特定するためのクエリ（例: "エアコン", "aircon", "smart watch"）'),
 });
 
 class RequirementsMCPServer {
@@ -258,6 +263,8 @@ class RequirementsMCPServer {
             return await this.handleCreateProject(args);
           case 'delete_project':
             return await this.handleDeleteProject(args);
+          case 'infer_and_switch_project':
+            return await this.handleInferAndSwitchProject(args);
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
@@ -531,6 +538,17 @@ class RequirementsMCPServer {
             projectId: { type: 'string', description: '削除するプロジェクトID' },
           },
           required: ['projectId'],
+        },
+      },
+      {
+        name: 'infer_and_switch_project',
+        description: 'プロジェクト名やキーワードからプロジェクトを推論して切り替えます。「エアコンのプロジェクトに要求を追加」のような自然言語指示に対応します。',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'プロジェクトを特定するためのクエリ（例: "エアコン", "aircon", "smart watch"）' },
+          },
+          required: ['query'],
         },
       },
     ];
@@ -1302,6 +1320,49 @@ class RequirementsMCPServer {
         {
           type: 'text' as const,
           text: `✅ プロジェクト「${params.projectId}」を削除しました`,
+        },
+      ],
+    };
+  }
+
+  private async handleInferAndSwitchProject(args: any) {
+    const params = InferAndSwitchProjectSchema.parse(args);
+    const projectManager = this.storage.getProjectManager();
+    const projects = await projectManager.listProjects();
+
+    const result = inferProjectFromQuery(params.query, projects);
+
+    if (result.matched && result.projectId) {
+      const project = await projectManager.switchProject(result.projectId);
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: `✅ プロジェクト「${project.projectName}」(${result.projectId})に切り替えました\n信頼度: ${result.confidence}`,
+          },
+        ],
+      };
+    }
+
+    if (result.candidates.length > 0) {
+      const candidatesList = result.candidates
+        .map((c) => `- ${c.projectId}: ${c.projectName}`)
+        .join('\n');
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: `⚠️ 複数のプロジェクトが見つかりました:\n${candidatesList}\n\nswitch_projectツールで明示的に指定してください。`,
+          },
+        ],
+      };
+    }
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: `❌ クエリ「${params.query}」に一致するプロジェクトが見つかりませんでした`,
         },
       ],
     };

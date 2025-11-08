@@ -18,7 +18,7 @@ requirements-mcp-serverは、Model Context Protocol (MCP)を使用した要求�
 │                   MCP Server Layer                       │
 │                    (src/index.ts)                        │
 │  ┌──────────────────────────────────────────────────┐   │
-│  │  Tool Handlers (21 tools)                        │   │
+│  │  Tool Handlers (22 tools)                        │   │
 │  │  • CRUD: add/get/list/update/delete              │   │
 │  │  • 分析: analyze_impact, get_dependency_graph    │   │
 │  │  • 検証: validate_requirement, validate_all      │   │
@@ -26,6 +26,7 @@ requirements-mcp-serverは、Model Context Protocol (MCP)を使用した要求�
 │  │  • Fix: load_policy, preview/apply/rollback      │   │
 │  │  • 変更: propose_change                          │   │
 │  │  • Project: list/get/switch/create/delete        │   │
+│  │  •         infer_and_switch_project              │   │
 │  └──────────────────────────────────────────────────┘   │
 └─────────────────────┬───────────────────────────────────┘
                       │
@@ -89,16 +90,16 @@ requirements-mcp-serverは、Model Context Protocol (MCP)を使用した要求�
 
 **主要コンポーネント**:
 - `RequirementsMCPServer`: メインサーバークラス
-- Tool Handlers: 21個のMCPツールハンドラ
+- Tool Handlers: 22個のMCPツールハンドラ
 - Schema Validation: Zodによる入力検証
 
-**提供MCPツール** (21個):
+**提供MCPツール** (22個):
 1. **CRUD操作** (5): add_requirement, get_requirement, list_requirements, update_requirement, delete_requirement
 2. **検索・分析** (3): search_requirements, analyze_impact, get_dependency_graph
 3. **変更管理** (1): propose_change
 4. **検証** (3): validate_requirement, validate_all_requirements, get_validation_report
 5. **Fix Engine** (4): load_policy, preview_fixes, apply_fixes, rollback_fixes
-6. **プロジェクト管理** (5): list_projects, get_current_project, switch_project, create_project, delete_project
+6. **プロジェクト管理** (6): list_projects, get_current_project, switch_project, create_project, delete_project, infer_and_switch_project
 
 **設計原則**:
 - 各ツールハンドラは単一責任
