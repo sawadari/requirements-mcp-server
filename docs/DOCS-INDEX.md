@@ -32,7 +32,7 @@ requirements-mcp-serverの全ドキュメント一覧です。目的に応じて
 
 | ドキュメント | 内容 | 対象 |
 |-------------|------|------|
-| **[MCPツールリファレンス](user-guide/mcp-tools.md)** ⭐ | 21個のツール完全ガイド | 全ユーザー |
+| **[MCPツールリファレンス](user-guide/mcp-tools.md)** ⭐ | 23個のツール完全ガイド | 全ユーザー |
 | **[Webビューアー](user-guide/web-viewer.md)** | ブラウザUIの使い方 | 全ユーザー |
 | **[検証機能](user-guide/validation.md)** | 品質チェックと自動修正 | 要求管理者 |
 | **[検証ルールリファレンス](validation-rules-reference.md)** ⭐ | A-Eドメイン20ルール | 要求管理者 |
@@ -77,6 +77,7 @@ requirements-mcp-serverの全ドキュメント一覧です。目的に応じて
 | **[Miyabi統合](development/miyabi-integration.md)** | 自律型開発フレームワーク | コントリビューター |
 | **[ツール管理](development/tool-management.md)** | 機能重複防止システム | コントリビューター |
 | **[Issue作成ワークフロー](development/issue-workflow.md)** | GitHub Issue連携 | コントリビューター |
+| **[CLI依存箇所の記録](development/cli-dependencies.md)** | CLI依存の発見と改善ログ | コントリビューター |
 
 ---
 

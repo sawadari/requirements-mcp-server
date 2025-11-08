@@ -109,6 +109,12 @@ const GetValidationReportSchema = z.object({
   format: z.enum(['json', 'markdown']).optional().describe('レポート形式（デフォルト: json）'),
 });
 
+const GetValidationResultsSchema = z.object({
+  projectId: z.string().optional().describe('プロジェクトID（省略時は現在のプロジェクト）'),
+  severity: z.enum(['error', 'warning', 'info', 'all']).optional().describe('取得する違反の重要度（デフォルト: all）'),
+  detailed: z.boolean().optional().describe('詳細情報を含めるか（デフォルト: true）'),
+});
+
 const LoadPolicySchema = z.object({
   policyPath: z.string().optional().describe('ポリシーファイルのパス（デフォルト: ./config/fix-policy.jsonc）'),
 });
@@ -245,6 +251,8 @@ class RequirementsMCPServer {
             return await this.handleValidateAllRequirements(args);
           case 'get_validation_report':
             return await this.handleGetValidationReport(args);
+          case 'get_validation_results':
+            return await this.handleGetValidationResults(args);
           case 'load_policy':
             return await this.handleLoadPolicy(args);
           case 'preview_fixes':
@@ -442,6 +450,18 @@ class RequirementsMCPServer {
           type: 'object',
           properties: {
             format: { type: 'string', enum: ['json', 'markdown'], description: 'レポート形式（デフォルト: json）' },
+          },
+        },
+      },
+      {
+        name: 'get_validation_results',
+        description: '現在のプロジェクトの検証結果を詳細に取得します。重要度別のフィルタリングが可能で、各違反について要求ID、ルールID、メッセージ、詳細、修正案を含む構造化されたデータを返します。validate_all_requirementsを実行済みの場合はキャッシュされた結果を、未実行の場合は自動的に検証を実行して結果を返します。',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            projectId: { type: 'string', description: 'プロジェクトID（省略時は現在のプロジェクト）' },
+            severity: { type: 'string', enum: ['error', 'warning', 'info', 'all'], description: '取得する違反の重要度（デフォルト: all）' },
+            detailed: { type: 'boolean', description: '詳細情報を含めるか（デフォルト: true）' },
           },
         },
       },
@@ -1014,6 +1034,134 @@ class RequirementsMCPServer {
     }
   }
 
+  private async handleGetValidationResults(args: any) {
+    const params = GetValidationResultsSchema.parse(args);
+
+    if (!this.validationEngine) {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: 'ValidationEngine is not initialized yet. Please try again in a moment.',
+          },
+        ],
+      };
+    }
+
+    // キャッシュされた結果がない場合は検証を実行
+    if (this.validationResults.size === 0) {
+      const allRequirements = await this.storage.getAllRequirements();
+      const requirementsMap = new Map(allRequirements.map(r => [r.id, r]));
+
+      this.validationResults = await this.validationEngine.validateAll(
+        requirementsMap,
+        {
+          useLLM: false,
+          updateMetrics: true,
+        }
+      );
+    }
+
+    const allRequirements = await this.storage.getAllRequirements();
+    const requirementsMap = new Map(allRequirements.map(r => [r.id, r]));
+
+    // 重要度フィルター
+    const severity = params.severity || 'all';
+    const detailed = params.detailed !== false;
+
+    // 統計情報を計算
+    const totalRequirements = this.validationResults.size;
+    const totalViolations = Array.from(this.validationResults.values()).reduce(
+      (sum, r) => sum + r.violations.length,
+      0
+    );
+
+    const violationsBySeverity = {
+      error: 0,
+      warning: 0,
+      info: 0,
+    };
+
+    const violationsByDomain = new Map<string, number>();
+    const violationsByRule = new Map<string, number>();
+
+    // 違反を集計
+    for (const result of this.validationResults.values()) {
+      for (const violation of result.violations) {
+        const sev = violation.severity as 'error' | 'warning' | 'info';
+        if (sev in violationsBySeverity) {
+          violationsBySeverity[sev]++;
+        }
+
+        const domainCount = violationsByDomain.get(violation.ruleDomain) || 0;
+        violationsByDomain.set(violation.ruleDomain, domainCount + 1);
+
+        const ruleCount = violationsByRule.get(violation.ruleId) || 0;
+        violationsByRule.set(violation.ruleId, ruleCount + 1);
+      }
+    }
+
+    // 違反のある要求を抽出
+    const violatedRequirements = Array.from(this.validationResults.entries())
+      .filter(([_, result]) => result.violations.length > 0)
+      .map(([id, result]) => {
+        const req = requirementsMap.get(id);
+
+        // 重要度フィルター適用
+        let violations = result.violations;
+        if (severity !== 'all') {
+          violations = violations.filter((v: any) => v.severity === severity);
+        }
+
+        if (violations.length === 0) {
+          return null;
+        }
+
+        return {
+          requirementId: id,
+          title: req?.title || '',
+          type: req?.type || '',
+          status: req?.status || '',
+          violationCount: violations.length,
+          violations: detailed ? violations.map((v: any) => ({
+            ruleId: v.ruleId,
+            ruleDomain: v.ruleDomain,
+            severity: v.severity,
+            message: v.message,
+            details: v.details,
+            suggestedFix: v.suggestedFix,
+          })) : violations.map((v: any) => ({
+            ruleId: v.ruleId,
+            severity: v.severity,
+            message: v.message,
+          })),
+        };
+      })
+      .filter(item => item !== null);
+
+    // レスポンスを構築
+    const response = {
+      summary: {
+        projectId: this.storage.getProjectManager().getCurrentProjectId(),
+        totalRequirements,
+        totalViolations,
+        violationsBySeverity,
+        violationsByDomain: Object.fromEntries(violationsByDomain),
+        violationsByRule: Object.fromEntries(violationsByRule),
+      },
+      requirements: violatedRequirements,
+    };
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: JSON.stringify(response, null, 2),
+        },
+      ],
+    };
+  }
+
   private async handleLoadPolicy(args: any) {
     const params = LoadPolicySchema.parse(args);
     const policyPath = params.policyPath || './config/fix-policy.jsonc';
@@ -1449,10 +1597,112 @@ class RequirementsMCPServer {
     };
   }
 
+  private async displayStartupInfo(): Promise<void> {
+    console.error('\n' + '='.repeat(70));
+    console.error('🚀 Requirements MCP Server - Startup Configuration');
+    console.error('='.repeat(70) + '\n');
+
+    // オントロジー情報
+    if (this.validationEngine) {
+      const ontology = this.validationEngine.getOntologyManager();
+
+      if (ontology) {
+        const schema = ontology.exportSchema();
+
+        console.error('📚 オントロジー（要求段階定義）:');
+        console.error(`   バージョン: ${schema.version}`);
+        console.error(`   段階数: ${schema.stages.length}`);
+        schema.stages.forEach((stage: any, idx: number) => {
+          console.error(`   ${idx + 1}. ${stage.id} (${stage.name})`);
+          console.error(`      - 子要求必須: ${stage.requiresChildren ? 'はい' : 'いいえ'}`);
+        });
+        console.error('');
+      }
+
+      // 検証ルール情報
+      const ruleCount = this.validationEngine.getRuleCount();
+      console.error('✅ 検証ルール:');
+      console.error(`   有効なルール数: ${ruleCount}個`);
+      console.error('   ドメイン: A(階層), B(グラフ), C(抽象度), D(MECE), E(スタイル)');
+      console.error('');
+
+      // 品質基準設定
+      const thresholds = this.validationEngine.getThresholds();
+      const isDefault =
+        thresholds.disabledRules.length === 0 &&
+        Object.keys(thresholds.severityOverrides).length === 0 &&
+        thresholds.errorTolerance === 0 &&
+        thresholds.warningTolerance === Infinity &&
+        thresholds.infoTolerance === Infinity;
+
+      console.error('⚙️  品質基準設定:');
+      if (isDefault) {
+        console.error('   現在の設定: デフォルト（全ルール有効）');
+      } else {
+        console.error('   現在の設定: カスタム (config/quality-thresholds.json)');
+        console.error(`   エラー許容数: ${thresholds.errorTolerance === Infinity ? '無制限' : thresholds.errorTolerance}`);
+        console.error(`   警告許容数: ${thresholds.warningTolerance === Infinity ? '無制限' : thresholds.warningTolerance}`);
+        console.error(`   推奨事項許容数: ${thresholds.infoTolerance === Infinity ? '無制限' : thresholds.infoTolerance}`);
+
+        if (thresholds.disabledRules.length > 0) {
+          console.error(`   無効化ルール: ${thresholds.disabledRules.join(', ')}`);
+        }
+
+        if (Object.keys(thresholds.severityOverrides).length > 0) {
+          const overrides = Object.entries(thresholds.severityOverrides)
+            .map(([k, v]) => `${k}→${v}`)
+            .join(', ');
+          console.error(`   重要度変更: ${overrides}`);
+        }
+      }
+      console.error('');
+    }
+
+    console.error('💡 品質基準のカスタマイズ方法:');
+    console.error('   品質基準を調整するには、以下のファイルを作成してください：');
+    console.error('   📄 config/quality-thresholds.json');
+    console.error('');
+    console.error('   設定例:');
+    console.error('   {');
+    console.error('     "errorTolerance": 0,        // エラーの許容数（0=許容しない）');
+    console.error('     "warningTolerance": 5,      // 警告の許容数');
+    console.error('     "infoTolerance": 10,        // 推奨事項の許容数');
+    console.error('     "disabledRules": ["E3"],    // 無効化するルールID');
+    console.error('     "severityOverrides": {      // ルールの重要度変更');
+    console.error('       "E3": "info"              // E3を警告→推奨に変更');
+    console.error('     }');
+    console.error('   }');
+    console.error('');
+    console.error('   詳細: docs/user-guide/quality-thresholds.md を参照');
+    console.error('');
+    console.error('='.repeat(70) + '\n');
+  }
+
   async start(): Promise<void> {
     await this.storage.initialize();
     await this.logger.initialize();
     await this.validator.initialize();
+
+    // ValidationEngineの初期化を待つ
+    if (!this.validationEngine) {
+      await new Promise<void>((resolve) => {
+        const checkInterval = setInterval(() => {
+          if (this.validationEngine) {
+            clearInterval(checkInterval);
+            resolve();
+          }
+        }, 100);
+
+        // 5秒でタイムアウト
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          resolve();
+        }, 5000);
+      });
+    }
+
+    // 起動情報を表示
+    await this.displayStartupInfo();
 
     const transport = new StdioServerTransport();
     await this.server.connect(transport);

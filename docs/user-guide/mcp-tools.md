@@ -1,10 +1,10 @@
 # MCPツール完全ガイド - requirements-mcp-server
 
-**バージョン**: 1.0.0
+**バージョン**: 1.1.0
 **最終更新**: 2025-11-08
-**ツール総数**: 22個
+**ツール総数**: 23個
 
-このドキュメントでは、requirements-mcp-serverで利用可能な22個のMCPツールについて詳しく説明します。
+このドキュメントでは、requirements-mcp-serverで利用可能な23個のMCPツールについて詳しく説明します。
 
 ---
 
@@ -14,7 +14,7 @@
 - [カテゴリ別詳細](#カテゴリ別詳細)
   - [1. CRUD操作（6ツール）](#1-crud操作6ツール)
   - [2. 分析・インサイト（2ツール）](#2-分析インサイト2ツール)
-  - [3. バリデーション・品質（3ツール）](#3-バリデーション品質3ツール)
+  - [3. バリデーション・品質（4ツール）](#3-バリデーション品質4ツール)
   - [4. 変更管理（5ツール）](#4-変更管理5ツール)
   - [5. プロジェクト管理（6ツール）](#5-プロジェクト管理6ツール)
 - [使用例](#使用例)
@@ -37,17 +37,18 @@
 | 9 | validate_requirement | Validation | 単一要求の妥当性検証 |
 | 10 | validate_all_requirements | Validation | 全要求の妥当性検証 |
 | 11 | get_validation_report | Validation | 検証レポート取得 |
-| 12 | propose_change | Change Mgmt | 変更提案を作成 |
-| 13 | load_policy | Change Mgmt | 修正ポリシーを読み込み |
-| 14 | preview_fixes | Change Mgmt | 修正プレビュー |
-| 15 | apply_fixes | Change Mgmt | 修正を適用 |
-| 16 | rollback_fixes | Change Mgmt | 修正をロールバック |
-| 17 | list_projects | Project Mgmt | プロジェクト一覧を取得 |
-| 18 | get_current_project | Project Mgmt | 現在のプロジェクト情報 |
-| 19 | switch_project | Project Mgmt | プロジェクトを切り替え |
-| 20 | create_project | Project Mgmt | 新規プロジェクト作成 |
-| 21 | delete_project | Project Mgmt | プロジェクトを削除 |
-| 22 | infer_and_switch_project | Project Mgmt | 自然言語からプロジェクト推論・切替 |
+| 12 | get_validation_results | Validation | 詳細検証結果取得（構造化データ） |
+| 13 | propose_change | Change Mgmt | 変更提案を作成 |
+| 14 | load_policy | Change Mgmt | 修正ポリシーを読み込み |
+| 15 | preview_fixes | Change Mgmt | 修正プレビュー |
+| 16 | apply_fixes | Change Mgmt | 修正を適用 |
+| 17 | rollback_fixes | Change Mgmt | 修正をロールバック |
+| 18 | list_projects | Project Mgmt | プロジェクト一覧を取得 |
+| 19 | get_current_project | Project Mgmt | 現在のプロジェクト情報 |
+| 20 | switch_project | Project Mgmt | プロジェクトを切り替え |
+| 21 | create_project | Project Mgmt | 新規プロジェクト作成 |
+| 22 | delete_project | Project Mgmt | プロジェクトを削除 |
+| 23 | infer_and_switch_project | Project Mgmt | 自然言語からプロジェクト推論・切替 |
 
 ---
 
@@ -239,7 +240,7 @@
 
 ---
 
-### 3. バリデーション・品質（3ツール）
+### 3. バリデーション・品質（4ツール）
 
 妥当性検証・品質チェック
 
@@ -308,7 +309,84 @@
 検証レポートをMarkdown形式で取得してください
 ```
 
-**関連ツール**: `validate_all_requirements`
+**関連ツール**: `validate_all_requirements`, `get_validation_results`
+
+---
+
+#### 3.4 get_validation_results
+
+**説明**: 現在のプロジェクトの検証結果を詳細に取得します。`validate_all_requirements`を実行済みの場合はキャッシュされた結果を返し、未実行の場合は自動的に検証を実行します。
+
+**🆕 新機能**: 重要度別のフィルタリングと構造化されたJSON形式での結果取得が可能
+
+**入力パラメータ**:
+- `projectId` (オプション) - プロジェクトID（省略時は現在のプロジェクト）
+- `severity` (オプション) - 取得する違反の重要度: `error`, `warning`, `info`, `all`（デフォルト: `all`）
+- `detailed` (オプション) - 詳細情報を含めるか（デフォルト: `true`）
+
+**出力**: 構造化された検証結果オブジェクト
+```json
+{
+  "summary": {
+    "projectId": "aircon-project",
+    "totalRequirements": 31,
+    "totalViolations": 29,
+    "violationsBySeverity": {
+      "error": 0,
+      "warning": 6,
+      "info": 23
+    },
+    "violationsByDomain": {
+      "quality_style": 20,
+      "abstraction": 5
+    },
+    "violationsByRule": {
+      "E2": 10,
+      "E4": 5,
+      "C1": 2
+    }
+  },
+  "requirements": [
+    {
+      "requirementId": "STK-001",
+      "title": "要求のタイトル",
+      "type": "stakeholder",
+      "status": "draft",
+      "violationCount": 3,
+      "violations": [
+        {
+          "ruleId": "E2",
+          "ruleDomain": "quality_style",
+          "severity": "info",
+          "message": "受動態が使用されています",
+          "details": "詳細情報",
+          "suggestedFix": "修正案"
+        }
+      ]
+    }
+  ]
+}
+```
+
+**使用例**:
+```
+# すべての違反を取得
+現在のプロジェクトの検証結果を取得してください
+
+# 警告のみを取得
+警告レベルの違反のみを取得してください
+
+# エラーのみを簡略表示
+エラーレベルの違反を簡略形式で取得してください
+```
+
+**ユースケース**:
+- プログラムで検証結果を処理したい場合
+- 重要度別に違反を確認したい場合
+- ダッシュボードやレポート生成に利用したい場合
+- CLIスクリプトに頼らずMCPツールから直接結果を取得したい場合
+
+**関連ツール**: `validate_all_requirements`, `get_validation_report`
 
 ---
 
