@@ -147,3 +147,14 @@ export interface ValidationRuleConfig {
     quality_style: ValidationRule[]; // E: 品質スタイル
   };
 }
+
+/**
+ * 品質基準の許容レベル設定
+ */
+export interface QualityThresholds {
+  errorTolerance: number;        // エラーレベルの許容数（デフォルト: 0）
+  warningTolerance: number;      // 警告レベルの許容数（デフォルト: Infinity）
+  infoTolerance: number;         // 推奨事項レベルの許容数（デフォルト: Infinity）
+  disabledRules: string[];       // 無効化するルールIDのリスト
+  severityOverrides: Record<string, ViolationSeverity>; // ルールの重要度変更
+}

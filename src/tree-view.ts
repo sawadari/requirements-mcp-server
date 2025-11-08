@@ -45,7 +45,7 @@ export class TreeBuilder {
         // ステークホルダの子はシステム要求
         if (level === 0 && (r.type === 'system' || !r.type)) return true;
         // システムの子は機能要求
-        if (level === 1 && r.type === 'functional') return true;
+        if (level === 1 && (r.type === 'functional' || r.type === 'system_functional')) return true;
       }
 
       return false;

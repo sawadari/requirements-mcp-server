@@ -1,0 +1,15 @@
+{
+  "description": "品質基準の許容レベル設定 - このファイルをquality-thresholds.jsonにコピーしてカスタマイズしてください",
+  "errorTolerance": 0,
+  "warningTolerance": 5,
+  "infoTolerance": 10,
+  "disabledRules": [],
+  "severityOverrides": {},
+  "examples": {
+    "disabledRules_example": ["E3", "D2"],
+    "severityOverrides_example": {
+      "E3": "info",
+      "D2": "warning"
+    }
+  }
+}

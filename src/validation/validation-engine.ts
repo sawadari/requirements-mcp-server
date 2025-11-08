@@ -11,6 +11,7 @@ import type {
   ValidationResult,
   ValidationRule,
   ValidationRuleConfig,
+  QualityThresholds,
 } from '../types.js';
 
 import { StructureValidationEngine, HierarchyValidator, GraphHealthValidator } from './structure-validator.js';
@@ -18,6 +19,7 @@ import { NLPAnalyzer, QualityStyleValidator } from './nlp-analyzer.js';
 import { AbstractionValidator, MECEValidator } from './mece-validator.js';
 import { LLMEvaluator } from './llm-evaluator.js';
 import { OntologyManager, OntologyLoader } from '../ontology/index.js';
+import { QualityThresholdsLoader } from './quality-thresholds-loader.js';
 
 /**
  * ルール設定ローダー
@@ -132,9 +134,18 @@ export class RuleConfigLoader {
 export class ValidationEngine {
   private config: ValidationRuleConfig;
   private ontologyManager?: OntologyManager;
+  private thresholds: QualityThresholds;
 
-  constructor(config: ValidationRuleConfig, ontologyManager?: OntologyManager) {
-    this.config = config;
+  constructor(
+    config: ValidationRuleConfig,
+    ontologyManager?: OntologyManager,
+    thresholds?: QualityThresholds
+  ) {
+    // thresholdsをconfigに適用
+    this.thresholds = thresholds || QualityThresholdsLoader.getDefaultThresholds();
+    this.config = thresholds
+      ? QualityThresholdsLoader.applyToRuleConfig(config, thresholds)
+      : config;
     this.ontologyManager = ontologyManager;
 
     // Set ontology manager for validators
@@ -146,7 +157,11 @@ export class ValidationEngine {
   /**
    * ファクトリメソッド: ルール設定を読み込んでエンジンを作成
    */
-  static async create(configPath?: string, ontologyPath?: string): Promise<ValidationEngine> {
+  static async create(
+    configPath?: string,
+    ontologyPath?: string,
+    thresholdsPath?: string
+  ): Promise<ValidationEngine> {
     const config = await RuleConfigLoader.loadRules(configPath);
 
     // Load ontology if path provided or from environment
@@ -161,7 +176,10 @@ export class ValidationEngine {
       console.warn('Failed to load ontology, continuing without it:', error);
     }
 
-    return new ValidationEngine(config, ontologyManager);
+    // Load quality thresholds
+    const thresholds = await QualityThresholdsLoader.loadThresholds(thresholdsPath);
+
+    return new ValidationEngine(config, ontologyManager, thresholds);
   }
 
   /**
@@ -169,6 +187,26 @@ export class ValidationEngine {
    */
   getOntologyManager(): OntologyManager | undefined {
     return this.ontologyManager;
+  }
+
+  /**
+   * Get the total number of enabled validation rules
+   */
+  getRuleCount(): number {
+    const hierarchyCount = this.config.rules.hierarchy.filter(r => r.enabled).length;
+    const graphCount = this.config.rules.graph_health.filter(r => r.enabled).length;
+    const abstractionCount = this.config.rules.abstraction.filter(r => r.enabled).length;
+    const meceCount = this.config.rules.mece.filter(r => r.enabled).length;
+    const qualityCount = this.config.rules.quality_style.filter(r => r.enabled).length;
+
+    return hierarchyCount + graphCount + abstractionCount + meceCount + qualityCount;
+  }
+
+  /**
+   * Get the quality thresholds
+   */
+  getThresholds(): QualityThresholds {
+    return this.thresholds;
   }
 
   /**
@@ -382,6 +420,22 @@ export class ValidationEngine {
     report += `- エラー: ${bySeverity.error}\n`;
     report += `- 警告: ${bySeverity.warning}\n`;
     report += `- 情報: ${bySeverity.info}\n\n`;
+
+    // 品質基準の許容数チェック
+    const toleranceCheck = QualityThresholdsLoader.checkTolerances(results, this.thresholds);
+    if (!toleranceCheck.withinTolerance) {
+      report += `## ⚠️ 品質基準の許容範囲超過\n\n`;
+      if (toleranceCheck.summary.exceedsError) {
+        report += `- ❌ エラー: ${toleranceCheck.summary.errorCount} / ${this.thresholds.errorTolerance} (許容範囲超過)\n`;
+      }
+      if (toleranceCheck.summary.exceedsWarning) {
+        report += `- ⚠️  警告: ${toleranceCheck.summary.warningCount} / ${this.thresholds.warningTolerance} (許容範囲超過)\n`;
+      }
+      if (toleranceCheck.summary.exceedsInfo) {
+        report += `- ℹ️  推奨事項: ${toleranceCheck.summary.infoCount} / ${this.thresholds.infoTolerance} (許容範囲超過)\n`;
+      }
+      report += '\n';
+    }
 
     // ドメイン別の集計
     const byDomain = new Map<string, number>();
