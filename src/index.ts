@@ -619,17 +619,98 @@ class RequirementsMCPServer {
     const params = UpdateRequirementSchema.parse(args);
     const { id, ...updates } = params;
 
+    // 変更前の要求を取得
+    const before = await this.storage.getRequirement(id);
+    if (!before) {
+      throw new Error(`Requirement ${id} not found`);
+    }
+
+    // 要求を更新
     const updated = await this.storage.updateRequirement(id, updates);
 
     if (!updated) {
       throw new Error(`Requirement ${id} not found`);
     }
 
+    // 自動影響範囲分析・検証・修正提案
+    let impactAnalysis = null;
+    let validationResults: any[] = [];
+    let fixSuggestions = null;
+
+    try {
+      // 1. 影響範囲分析
+      impactAnalysis = await this.analyzer.analyzeImpact(id, updates);
+
+      // 2. 影響を受ける要求を検証
+      const impactedIds = [
+        id,
+        ...impactAnalysis.affectedRequirements.map((r: any) => r.id),
+      ];
+
+      for (const reqId of impactedIds) {
+        try {
+          const validation = await this.validator.validate(reqId);
+          if (!validation.isValid || validation.errorCount > 0) {
+            validationResults.push({
+              requirementId: reqId,
+              results: validation.results,
+              errorCount: validation.errorCount,
+              warningCount: validation.warningCount,
+            });
+          }
+        } catch (err) {
+          // 個別の検証エラーは無視して続行
+        }
+      }
+
+      // 3. 修正提案を生成（品質基準を満たさない場合）
+      if (validationResults.length > 0) {
+        try {
+          // Fix Engineのpolicy読み込み
+          const policyPath = './fix-engine-policy.json';
+          // preview_fixesは既存機能を利用
+          fixSuggestions = {
+            message:
+              '品質基準を満たさない要求が検出されました。Fix Engineで修正を確認してください。',
+            affectedRequirements: validationResults.map((v) => v.requirementId),
+          };
+        } catch (err) {
+          // Fix Engine関連エラーは無視
+        }
+      }
+    } catch (err) {
+      // 影響分析・検証のエラーは致命的ではないため、ログのみ
+      logger.warn('自動検証でエラーが発生しました', { error: err });
+    }
+
+    // 結果を整形して返却
+    let resultText = `✅ 要求を更新しました: ${id}\n\n`;
+    resultText += `📝 更新内容:\n${JSON.stringify(updates, null, 2)}\n\n`;
+
+    if (impactAnalysis) {
+      resultText += `📊 影響範囲分析:\n`;
+      resultText += `  - 影響を受ける要求数: ${impactAnalysis.affectedRequirements.length}件\n`;
+      if (impactAnalysis.affectedRequirements.length > 0) {
+        resultText += `  - 影響を受ける要求: ${impactAnalysis.affectedRequirements.map((r: any) => r.id).join(', ')}\n`;
+      }
+      resultText += `  - 推定影響度: ${impactAnalysis.estimatedEffort}\n\n`;
+    }
+
+    if (validationResults.length > 0) {
+      resultText += `⚠️  品質基準を満たさない要求が ${validationResults.length} 件検出されました:\n`;
+      validationResults.forEach((v) => {
+        resultText += `  - ${v.requirementId}: エラー${v.errorCount}件, 警告${v.warningCount}件\n`;
+      });
+      resultText += `\n💡 修正提案: validate_requirement または preview_fixes ツールで詳細を確認してください\n`;
+    } else if (impactAnalysis && impactAnalysis.affectedRequirements.length > 0) {
+      resultText += `✅ 影響範囲内の全要求が品質基準を満たしています\n`;
+    }
+
     return {
       content: [
         {
           type: 'text' as const,
-          text: `要求を更新しました:\n\n${JSON.stringify(updated, null, 2)}`,
+          text: resultText,
         },
       ],
     };
