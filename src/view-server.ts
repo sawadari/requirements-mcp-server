@@ -20,11 +20,17 @@ import { ValidationEngine } from './validation/validation-engine.js';
 import { createChatAssistant } from './ai-chat-assistant.js';
 import { createEnhancedChatAssistant, EnhancedAIChatAssistant } from './enhanced-chat-assistant.js';
 import { createMCPChatAssistant, MCPChatAssistant } from './mcp-chat-assistant.js';
+import { renderNextShell } from './ui/templates/next-shell.js';
+import { renderDynamicShell } from './ui/templates/dynamic-shell.js';
 
 const app = express();
 const PORT = 5002;
 const storage = new RequirementsStorage('./data');
 const validator = new RequirementValidator(storage);
+const USE_NEXT_UI =
+  process.env.USE_NEXT_UI === '1' ||
+  process.env.USE_NEXT_UI === 'true' ||
+  process.env.USE_NEXT_UI === 'yes';
 
 // ValidationEngine for AI Chat Assistant
 let validationEngine: ValidationEngine;
@@ -86,6 +92,24 @@ const VIEWS = [
 
 // メインページ（ツリービュー）
 app.get('/', (req, res) => {
+  const uiQuery = Array.isArray(req.query.ui) ? req.query.ui[0] : req.query.ui;
+  const prefersLegacy = uiQuery === 'legacy';
+  const prefersNext = uiQuery === 'next';
+  const prefersDynamic = uiQuery === 'dynamic';
+
+  // Dynamic UI with real data
+  if (prefersDynamic) {
+    const html = renderDynamicShell({ title: 'Requirements Command Board' });
+    console.log('[DEBUG /] HTML length:', html.length);
+    console.log('[DEBUG /] Has project-selector-container:', html.includes('project-selector-container'));
+    return res.send(html);
+  }
+
+  // Static Next UI (placeholder)
+  if (!prefersLegacy && (USE_NEXT_UI || prefersNext)) {
+    return res.send(renderNextShell({ title: 'Requirements Command Board' }));
+  }
+
   const html = `
 <!DOCTYPE html>
 <html lang="ja">
@@ -2007,6 +2031,18 @@ app.get('/', (req, res) => {
 </html>
   `;
 
+  res.send(html);
+});
+
+app.get('/ui/next', (_req, res) => {
+  res.send(renderNextShell({ title: 'Requirements Command Board' }));
+});
+
+app.get('/ui/dynamic', (_req, res) => {
+  const html = renderDynamicShell({ title: 'Requirements Command Board - Dynamic' });
+  console.log('[DEBUG] HTML length:', html.length);
+  console.log('[DEBUG] Has project-selector-container:', html.includes('project-selector-container'));
+  console.log('[DEBUG] Has Project Selector comment:', html.includes('Project Selector'));
   res.send(html);
 });
 
