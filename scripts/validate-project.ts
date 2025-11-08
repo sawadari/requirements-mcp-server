@@ -157,7 +157,15 @@ async function main() {
   try {
     if (args.length > 0) {
       // 引数でプロジェクトファイルが指定された場合
-      const projectPath = path.resolve(args[0]);
+      let projectPath = args[0];
+
+      // プロジェクトIDだけが渡された場合、data/以下のファイルとして解決
+      if (!projectPath.includes('/') && !projectPath.includes('\\') && !projectPath.endsWith('.json')) {
+        projectPath = path.join(__dirname, '../data', `${projectPath}.json`);
+      } else {
+        projectPath = path.resolve(projectPath);
+      }
+
       await validateProject(projectPath);
     } else {
       // 引数なしの場合、data/以下の全プロジェクトを検証
